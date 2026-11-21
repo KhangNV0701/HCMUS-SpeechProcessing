@@ -1,0 +1,4 @@
+# A6: single decoder mapping directly to the compressed complex spectrum
+base: ../base.yaml
+experiment: {name: a06_complex_mapping}
+model: {decoder: complex}

@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "se-ablation"
+version = "0.1.0"
+description = "MP-SENet-style speech enhancement with a reproducible ablation study on VoiceBank-DEMAND"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+dependencies = [
+  "torch>=2.1",
+  "numpy",
+  "scipy",
+  "soundfile",
+  "pesq",
+  "pystoi",
+  "pyyaml",
+  "tqdm",
+  "matplotlib",
+]
+
+[project.optional-dependencies]
+app = ["gradio>=4.0"]
+slides = ["python-pptx>=0.6.21"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

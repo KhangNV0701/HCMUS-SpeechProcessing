@@ -1,0 +1,4 @@
+# A3: remove the STFT consistency loss
+base: ../base.yaml
+experiment: {name: a03_no_consistency}
+loss: {consistency: 0.0}

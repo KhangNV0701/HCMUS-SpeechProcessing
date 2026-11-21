@@ -1,0 +1,4 @@
+# P1 (proposed): add a multi-resolution STFT loss
+base: ../base.yaml
+experiment: {name: p01_mrstft}
+loss: {mrstft: 0.1}

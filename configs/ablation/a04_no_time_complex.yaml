@@ -1,0 +1,4 @@
+# A4: remove time-domain L1 and complex-spectrum losses
+base: ../base.yaml
+experiment: {name: a04_no_time_complex}
+loss: {time: 0.0, complex: 0.0}

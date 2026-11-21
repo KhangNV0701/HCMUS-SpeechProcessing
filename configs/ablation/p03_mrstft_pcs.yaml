@@ -1,0 +1,5 @@
+# P3 (proposed): MR-STFT loss + PCS target
+base: ../base.yaml
+experiment: {name: p03_mrstft_pcs}
+loss: {mrstft: 0.1}
+data: {pcs: true}

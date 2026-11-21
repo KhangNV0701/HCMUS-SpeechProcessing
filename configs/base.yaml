@@ -1,0 +1,65 @@
+# Baseline: MP-SENet-style model on VoiceBank-DEMAND (16 kHz).
+# Every ablation config inherits from this file via `base:` and changes ONE factor.
+experiment:
+  name: a00_baseline
+  output_dir: runs
+  seed: 1234
+
+data:
+  root: data/voicebank_demand_16k
+  train_clean: clean_trainset_28spk_wav
+  train_noisy: noisy_trainset_28spk_wav
+  test_clean: clean_testset_wav
+  test_noisy: noisy_testset_wav
+  val_speakers: [p226, p287]   # held out from the 28 training speakers; [] -> validate on test set
+  sample_rate: 16000
+  segment_seconds: 2.0
+  pcs: false                   # (proposed) perceptual contrast stretching of the target
+
+stft:
+  n_fft: 400
+  hop_length: 100
+  win_length: 400
+  compress_factor: 0.3
+
+model:
+  dense_channel: 64
+  num_tf_blocks: 4
+  tf_block: conformer          # conformer | lstm | none
+  decoder: parallel            # parallel | mag_only | complex
+  mask_activation: lsigmoid    # lsigmoid | sigmoid | relu
+  lsigmoid_beta: 2.0
+  conformer:
+    heads: 4
+    ff_mult: 4
+    conv_kernel: 31
+    dropout: 0.2
+
+loss:                          # weight 0 disables a term
+  magnitude: 0.9
+  phase: 0.3
+  complex: 0.1
+  time: 0.2
+  consistency: 0.1
+  metric: 0.05                 # metric-discriminator (GAN) loss; 0 -> no discriminator
+  mrstft: 0.0                  # (proposed) multi-resolution STFT loss
+
+train:
+  epochs: 100
+  batch_size: 4
+  num_workers: 4
+  lr: 5.0e-4
+  betas: [0.8, 0.99]
+  lr_decay: 0.99               # ExponentialLR per epoch
+  grad_clip: 0
+  log_every: 100
+  val_every_epochs: 1
+  val_max_files: 200
+  val_pesq: true
+  max_train_files: null        # debug: limit training set size
+
+eval:
+  after_train: true            # run full test-set evaluation with best.pt at the end
+  num_workers: 8
+  save_wavs: false
+  chunk_seconds: null

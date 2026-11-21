@@ -1,0 +1,4 @@
+# P2 (proposed): perceptual contrast stretching (PCS) of the training target
+base: ../base.yaml
+experiment: {name: p02_pcs}
+data: {pcs: true}

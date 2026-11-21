@@ -1,0 +1,4 @@
+# A2: remove the anti-wrapping phase losses (IP + GD + IAF)
+base: ../base.yaml
+experiment: {name: a02_no_phase_loss}
+loss: {phase: 0.0}

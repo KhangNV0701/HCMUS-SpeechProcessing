@@ -1,0 +1,7 @@
+# Tiny CPU smoke test on synthetic data (scripts/make_dummy_data.py).
+base: base.yaml
+experiment: {name: debug, output_dir: runs}
+data: {root: data/dummy, val_speakers: []}
+model: {dense_channel: 16, num_tf_blocks: 1}
+train: {epochs: 1, batch_size: 2, num_workers: 0, log_every: 1, val_max_files: 2, val_pesq: false}
+eval: {after_train: false}

@@ -1,0 +1,12 @@
+# Install PyTorch matching your CUDA first, e.g.:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+torch>=2.1
+numpy
+scipy
+soundfile
+pesq          # needs a C compiler on Windows; prebuilt on most Linux setups
+pystoi
+pyyaml
+tqdm
+matplotlib
+pytest

@@ -1,0 +1,4 @@
+# A10: plain sigmoid mask (beta = 1, fixed slope) instead of learnable sigmoid (beta = 2)
+base: ../base.yaml
+experiment: {name: a10_sigmoid_mask}
+model: {mask_activation: sigmoid}

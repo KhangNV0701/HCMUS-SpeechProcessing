@@ -1,0 +1,4 @@
+# A5: magnitude-only decoder, noisy phase re-used (no phase decoder)
+base: ../base.yaml
+experiment: {name: a05_mag_only}
+model: {decoder: mag_only}

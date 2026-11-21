@@ -1,0 +1,4 @@
+# A1: remove the metric discriminator (no GAN / PESQ feedback)
+base: ../base.yaml
+experiment: {name: a01_no_metric_disc}
+loss: {metric: 0.0}

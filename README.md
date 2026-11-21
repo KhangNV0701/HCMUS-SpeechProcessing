@@ -1,0 +1,170 @@
+# Speech Enhancement: MP-SENet Ablation Study
+
+Final project for the **Speech Processing** course (HCMUS, Master's program), research track.
+
+This repository contains:
+
+1. **Literature review** of recent speech-enhancement papers (TASLP, Interspeech, NeurIPS, ICLR): see [`docs/literature_review.md`](docs/literature_review.md)
+2. **Demo:** the official MP-SENet pretrained model ([`scripts/demo_official_mpsenet.sh`](scripts/demo_official_mpsenet.sh)), plus our own notebook and web demo
+3. **Ablation study:** a clean re-implementation of MP-SENet (Lu et al., Interspeech 2023) with config switches for 10 ablations: [`docs/ablation_design.md`](docs/ablation_design.md)
+4. **Proposed improvements:** a multi-resolution STFT loss and perceptual contrast stretching (PCS) of the target, evaluated like the ablations
+
+Slides: [`docs/slides/slides.pdf`](docs/slides/slides.pdf)
+
+## Team
+
+| Student ID | Name | Tasks |
+|---|---|---|
+| _xxxxxxx_ | _Member 1_ | _literature review, slides_ |
+| _xxxxxxx_ | _Member 2_ | _code, training, ablation_ |
+| _xxxxxxx_ | _Member 3_ | _demo, evaluation, video_ |
+
+## Repository layout
+
+```
+se-ablation/
+├── configs/
+│   ├── base.yaml               # full MP-SENet-style baseline (a00)
+│   ├── debug.yaml              # tiny CPU smoke test
+│   ├── experiments.txt         # list of runs used by the SLURM array / local runner
+│   └── ablation/               # a01–a10 ablations, p01–p03 proposed improvements (one factor each)
+├── src/se/
+│   ├── data/                   # paired VoiceBank-DEMAND dataset, speaker-held-out validation split
+│   ├── models/                 # generator (dense encoder, TS-Conformer, mag/phase decoders), metric discriminator
+│   ├── losses/                 # magnitude, anti-wrapping phase, complex, time, consistency, metric-GAN, MR-STFT
+│   ├── metrics/                # PESQ, CSIG/CBAK/COVL, SSNR, STOI/ESTOI, SI-SDR
+│   ├── utils/                  # config system, STFT, PCS
+│   ├── train.py                # training (single GPU or DDP via torchrun), auto-resume
+│   ├── evaluate.py             # full test-set evaluation -> per_file.csv + summary.json
+│   ├── enhance.py              # enhance any wav file / folder
+│   └── inference.py
+├── scripts/
+│   ├── prepare_vbd.py          # download + resample VoiceBank-DEMAND to 16 kHz
+│   ├── make_dummy_data.py      # synthetic data for smoke tests
+│   ├── run_ablation_local.sh   # run every experiment sequentially (no SLURM)
+│   ├── collect_results.py      # -> results/ablation_results.{csv,md}, ablation_pesq.png
+│   ├── score_dir.py            # score any folder of enhanced wavs with our metrics
+│   └── demo_official_mpsenet.sh
+├── slurm/                      # sbatch scripts for HPC (single run, job array, DDP, noisy baseline)
+├── app/gradio_app.py           # web demo: upload/record audio, compare checkpoints, spectrograms
+├── notebooks/demo.ipynb        # listen + spectrograms + metrics for a few utterances
+├── docs/                       # literature review, ablation design, slides
+├── results/                    # aggregated results (filled after training)
+└── tests/                      # pytest unit tests (shapes, losses, metrics, config)
+```
+
+## 1. Installation
+
+```bash
+git clone <this-repo-url> se-ablation && cd se-ablation
+python -m venv .venv && source .venv/bin/activate          # or: conda env create -f environment.yml
+pip install torch --index-url https://download.pytorch.org/whl/cu121   # match your CUDA version
+pip install -e ".[dev]"
+pytest -q                                                   # ~20 tests, CPU only
+```
+
+`pesq` builds from source and needs a C compiler (`gcc` on Linux; *MSVC Build Tools* on Windows).
+
+## 2. Data
+
+```bash
+python scripts/prepare_vbd.py --out data      # ~2.5 GB download, resampled 48 kHz -> 16 kHz
+```
+This creates `data/voicebank_demand_16k/{clean,noisy}_{trainset_28spk,testset}_wav/`. If the download URLs change,
+download the four zips manually from https://datashare.ed.ac.uk/handle/10283/2791 into `data/raw/` and run the script with `--skip_download`.
+
+## 3. Smoke test (CPU, about a minute on a normal machine)
+
+```bash
+python scripts/make_dummy_data.py --out data/dummy
+python -m se.train --config configs/debug.yaml
+```
+
+## 4. Training and ablation
+
+Any config value can be overridden from the command line with dotted keys.
+
+```bash
+# one run (auto-evaluates best.pt on the test set when it finishes)
+python -m se.train --config configs/base.yaml
+python -m se.train --config configs/ablation/a05_mag_only.yaml train.epochs=50
+
+# multi-GPU on one node (batch_size is per GPU)
+torchrun --standalone --nproc_per_node=4 -m se.train --config configs/base.yaml
+```
+
+### On an HPC cluster (SLURM)
+
+Edit `slurm/env.sh` (modules / conda env) and the `#SBATCH` partition lines, then run:
+
+```bash
+sbatch slurm/eval_noisy.sbatch                         # reference row: unprocessed noisy input
+sbatch --array=0-13%4 slurm/ablation_array.sbatch      # 14 runs, at most 4 at a time
+EPOCHS=50 sbatch --array=0-13 slurm/ablation_array.sbatch   # shorter schedule for all runs
+```
+Jobs resume automatically from `runs/<name>/checkpoints/last.pt`, so a job that hits the time limit can just be resubmitted.
+
+**Compute estimate:** one 100-epoch run of the full model (11.5k × 2 s segments, batch 4) takes roughly a day on a
+single modern GPU. PESQ for the discriminator is computed on the CPU, so give each job ≥ 8 CPU cores. If the
+budget is tight, run all ablations with `EPOCHS=30–50` and only the baseline and best proposal for the full schedule.
+
+### Collect results
+
+```bash
+python scripts/collect_results.py      # -> results/ablation_results.csv / .md / ablation_pesq.png
+```
+
+## 5. Evaluation, inference and demo
+
+```bash
+python -m se.evaluate --ckpt runs/a00_baseline/checkpoints/best.pt --save_wavs
+python -m se.enhance  --ckpt runs/a00_baseline/checkpoints/best.pt --input my_noisy.wav --output out/
+
+# official MP-SENet code + pretrained checkpoint, scored with our metric suite
+bash scripts/demo_official_mpsenet.sh data/voicebank_demand_16k
+
+# web demo (for the video)
+pip install -e ".[app]"
+python app/gradio_app.py --ckpt runs/a00_baseline/checkpoints/best.pt --ckpt runs/p03_mrstft_pcs/checkpoints/best.pt
+```
+
+## 6. Experiments
+
+| ID | Change w.r.t. baseline |
+|---|---|
+| a00 | full model (MP-SENet-style, 2.05 M params) |
+| a01 | no metric discriminator |
+| a02 | no anti-wrapping phase losses |
+| a03 | no STFT consistency loss |
+| a04 | no time + complex losses |
+| a05 | magnitude-only decoder (noisy phase) |
+| a06 | complex-mapping decoder |
+| a07 | no magnitude compression (c = 1) |
+| a08 | 2 TS-Conformer blocks |
+| a09 | BiLSTM instead of Conformer |
+| a10 | plain sigmoid mask |
+| p01 | **+ multi-resolution STFT loss** (proposed) |
+| p02 | **+ PCS target** (proposed) |
+| p03 | **+ both** (proposed) |
+
+The result table is generated into `results/ablation_results.md` after the runs finish. To put the numbers into
+the slides, run `python docs/slides/build_slides.py` (it reads that CSV), then export the PDF (see `docs/slides/README.md`).
+
+## 7. Rebuilding the slides
+
+```bash
+pip install -e ".[slides]"
+python docs/slides/build_slides.py                      # -> docs/slides/slides.pptx (fills tables from results/ if present)
+powershell -File docs/slides/export_pdf.ps1             # Windows + PowerPoint -> slides.pdf
+# or: soffice --headless --convert-to pdf docs/slides/slides.pptx --outdir docs/slides
+```
+
+## Acknowledgements and references
+
+* Y.-X. Lu, Y. Ai, Z.-H. Ling, *MP-SENet: A Speech Enhancement Model with Parallel Denoising of Magnitude and Phase Spectra*, Interspeech 2023. Official code: https://github.com/yxlu-0102/MP-SENet. This repo is an independent re-implementation for ablation purposes.
+* S. Abdulatif, R. Cao, B. Yang, *CMGAN: Conformer-Based Metric-GAN for Monaural Speech Enhancement*, IEEE/ACM TASLP 2024.
+* R. Chao et al., *An Investigation of Incorporating Mamba for Speech Enhancement*, IEEE SLT 2024 (PCS).
+* C. Valentini-Botinhao et al., *Investigating RNN-based speech enhancement methods for noise-robust Text-to-Speech*, SSW 2016 (VoiceBank-DEMAND).
+* Composite measures: Y. Hu, P. Loizou, *Evaluation of objective quality measures for speech enhancement*, IEEE TASLP 2008.
+
+MIT License.
