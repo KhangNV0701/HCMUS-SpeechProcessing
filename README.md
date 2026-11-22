@@ -9,7 +9,7 @@ This repository contains:
 3. **Ablation study:** a clean re-implementation of MP-SENet (Lu et al., Interspeech 2023) with config switches for 10 ablations: [`docs/ablation_design.md`](docs/ablation_design.md)
 4. **Proposed improvements:** a multi-resolution STFT loss and perceptual contrast stretching (PCS) of the target, evaluated like the ablations
 
-Slides: [`docs/slides/slides.pdf`](docs/slides/slides.pdf)
+Report: [`docs/report/report.pdf`](docs/report/report.pdf) · Slides: [`docs/slides/slides.pdf`](docs/slides/slides.pdf)
 
 ## Team
 
@@ -48,7 +48,7 @@ se-ablation/
 ├── slurm/                      # sbatch scripts for HPC (single run, job array, DDP, noisy baseline)
 ├── app/gradio_app.py           # web demo: upload/record audio, compare checkpoints, spectrograms
 ├── notebooks/demo.ipynb        # listen + spectrograms + metrics for a few utterances
-├── docs/                       # literature review, ablation design, slides
+├── docs/                       # literature review, ablation design, report, slides
 ├── results/                    # aggregated results (filled after training)
 └── tests/                      # pytest unit tests (shapes, losses, metrics, config)
 ```
@@ -150,10 +150,17 @@ python app/gradio_app.py --ckpt runs/a00_baseline/checkpoints/best.pt --ckpt run
 The result table is generated into `results/ablation_results.md` after the runs finish. To put the numbers into
 the slides, run `python docs/slides/build_slides.py` (it reads that CSV), then export the PDF (see `docs/slides/README.md`).
 
-## 7. Rebuilding the slides
+## 7. Rebuilding the report and slides
+
+Both are generated from code and fill in the results automatically from `results/ablation_results.csv`.
 
 ```bash
 pip install -e ".[slides]"
+python docs/report/build_report.py                      # figures + docs/report/report.docx
+powershell -File docs/report/export_pdf.ps1             # Windows + Word: update TOC, export report.pdf
+```
+
+```bash
 python docs/slides/build_slides.py                      # -> docs/slides/slides.pptx (fills tables from results/ if present)
 powershell -File docs/slides/export_pdf.ps1             # Windows + PowerPoint -> slides.pdf
 # or: soffice --headless --convert-to pdf docs/slides/slides.pptx --outdir docs/slides
