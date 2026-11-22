@@ -326,12 +326,11 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     R.p("A survey of recent methods and an ablation study of MP-SENet", size=17, color=PLUM, after=28)
     R.p("University of Science, VNU-HCM (HCMUS) · Master's program", size=11, color=MUTED, after=2)
     R.p("Instructor: <instructor name>", size=11, color=MUTED, after=2)
-    R.p(f"Group: <group name> · {date.today():%B %Y}", size=11, color=MUTED, after=24)
+    R.p(f"{date.today():%B %Y}", size=11, color=MUTED, after=24)
     R.p("**Group members and work division**", size=12, after=4)
     R.table([["Member", "Student ID", "Main tasks", "Share"],
-             ["<Member 1>", "<ID>", "Literature survey (Ch. 3), slides, report writing", "33%"],
-             ["<Member 2>", "<ID>", "Re-implementation, ablation runs on HPC (Ch. 5–7)", "33%"],
-             ["<Member 3>", "<ID>", "Demo, evaluation, web app, video (Ch. 4, 8)", "33%"]],
+             ["Chau Kien Dat", "25C15036", "Literature survey (Ch. 3), demo and web app (Ch. 4), slides, video", "50%"],
+             ["Nguyen Vi Khang", "25C15043", "Re-implementation, ablation runs on HPC, evaluation (Ch. 5–8), report", "50%"]],
             [3.4, 2.6, 8.4, 1.8], size=10.5, center_from=3)
     R.p("Code and data instructions: https://github.com/KhangNV0701/HCMUS-SpeechProcessing", size=10, color=MUTED)
     R.page_break()
@@ -744,9 +743,8 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     # ------------------------------------------------------------ appendix + refs
     R.h1("Appendix A  Work division")
     R.table([["Member", "Student ID", "Tasks", "Share"],
-             ["<Member 1>", "<ID>", "Literature survey (P1–P6), comparison, slides, report Ch. 1–3", "33%"],
-             ["<Member 2>", "<ID>", "Re-implementation, configs, HPC training, ablation analysis, Ch. 5–7", "33%"],
-             ["<Member 3>", "<ID>", "Official demo, evaluation metrics, web app, video, Ch. 4 & 8", "33%"]],
+             ["Chau Kien Dat", "25C15036", "Literature survey (P1–P6) and comparison, official demo, web app and notebook, slides, video; report Ch. 1–4", "50%"],
+             ["Nguyen Vi Khang", "25C15043", "Re-implementation, configs, HPC training, evaluation metrics, ablation analysis, proposed improvements; report Ch. 5–9", "50%"]],
             [3.2, 2.6, 8.8, 1.8], center_from=3)
 
     R.h1("References")

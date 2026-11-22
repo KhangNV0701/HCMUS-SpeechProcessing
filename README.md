@@ -15,9 +15,8 @@ Report: [`docs/report/report.pdf`](docs/report/report.pdf) · Slides: [`docs/sli
 
 | Student ID | Name | Tasks |
 |---|---|---|
-| _xxxxxxx_ | _Member 1_ | _literature review, slides_ |
-| _xxxxxxx_ | _Member 2_ | _code, training, ablation_ |
-| _xxxxxxx_ | _Member 3_ | _demo, evaluation, video_ |
+| 25C15036 | Chau Kien Dat | literature survey, demo & web app, slides, video |
+| 25C15043 | Nguyen Vi Khang | re-implementation, HPC ablation runs, evaluation, report |
 
 ## Repository layout
 

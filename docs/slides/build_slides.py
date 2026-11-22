@@ -370,7 +370,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
          bold=True, font=HEAD, color=WHITE, spacing=0)
     text(s, 0.8, 4.25, 11, 0.5, "What really matters in a state-of-the-art magnitude–phase denoiser?", size=20,
          italic=True, color="D9CFE0")
-    text(s, 0.8, 5.35, 11, 1.0, ["Group: <group name>   ·   Members: <Member 1>, <Member 2>, <Member 3>",
+    text(s, 0.8, 5.35, 11, 1.0, ["Chau Kien Dat (25C15036)   ·   Nguyen Vi Khang (25C15043)",
                                  "Instructor: <instructor>   ·   HCMUS, Master's program   ·   2026"],
          size=14, color="A79DB0")
     for i, c in enumerate([PLUM, MAGENTA, CORAL, AMBER]):
@@ -811,11 +811,10 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
 
     # 20 ── team -------------------------------------------------------------
     s = new()
-    title(s, "Team and task split", "Fill in before submission")
+    title(s, "Team and task split")
     rows = [["Member", "Student ID", "Tasks", "Share"],
-            ["<Member 1>", "<ID>", "Literature survey (P1–P6), slides", "33%"],
-            ["<Member 2>", "<ID>", "Re-implementation, ablation runs on HPC", "33%"],
-            ["<Member 3>", "<ID>", "Demo, evaluation, web app, video", "33%"]]
+            ["Chau Kien Dat", "25C15036", "Literature survey, demo & web app, slides, video", "50%"],
+            ["Nguyen Vi Khang", "25C15043", "Re-implementation, HPC ablation runs, evaluation, report", "50%"]]
     table(s, 0.6, 1.9, 12.15, rows, col_w=[2.6, 2.0, 6.0, 1.55], size=15, row_h=0.6)
     footer(s, n)
 
