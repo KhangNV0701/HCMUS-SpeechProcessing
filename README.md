@@ -93,7 +93,7 @@ torchrun --standalone --nproc_per_node=4 -m se.train --config configs/base.yaml
 
 ### On an HPC cluster (SLURM)
 
-Edit `slurm/env.sh` (modules / conda env) and the `#SBATCH` partition lines, then run:
+`slurm/env.sh` activates `./.venv` if present, otherwise the conda env `hcmus-sh` (override with `CONDA_ENV=...`). Add any `module load` lines your cluster needs there, edit and the `#SBATCH` partition lines, then run:
 
 ```bash
 sbatch slurm/eval_noisy.sbatch                         # reference row: unprocessed noisy input
