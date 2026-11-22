@@ -329,7 +329,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     R.p(f"{date.today():%B %Y}", size=11, color=MUTED, after=24)
     R.p("**Group members and work division**", size=12, after=4)
     R.table([["Member", "Student ID", "Main tasks", "Share"],
-             ["Chau Kien Dat", "25C15036", "Literature survey (Ch. 3), demo and web app (Ch. 4), slides, video", "50%"],
+             ["Chau Kien Dat", "25C15036", "Literature survey (Ch. 3), demo (Ch. 4), slides, video", "50%"],
              ["Nguyen Vi Khang", "25C15043", "Re-implementation, ablation runs on HPC, evaluation (Ch. 5–8), report", "50%"]],
             [3.4, 2.6, 8.4, 1.8], size=10.5, center_from=3)
     R.p("Code and data instructions: https://github.com/KhangNV0701/HCMUS-SpeechProcessing", size=10, color=MUTED)
@@ -352,7 +352,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
         "in one pass, *diffusion* models that generate clean speech step by step, and *language-model* methods that "
         "predict clean audio tokens.",
         "**Demo (Chapter 4).** We run the authors' official pretrained MP-SENet and our own pipeline, and score both "
-        "with the same metrics. A small web app lets you record or upload noisy speech and hear the result.",
+        "with the same metrics; a notebook lets you listen to the outputs of the different ablation runs.",
         "**Ablation study (Chapters 5–6).** We re-implemented MP-SENet (2.05 M parameters) and defined 10 experiments "
         "that each remove or replace exactly one component, to find which parts actually matter.",
         "**Improvements (Chapter 7).** We propose two training-only changes with no extra inference cost: a "
@@ -550,12 +550,12 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     R.bullets(["**Official model:** `scripts/demo_official_mpsenet.sh` downloads the authors' code and pretrained "
                "VoiceBank-DEMAND checkpoint, enhances the 824 test files, and scores them with our metrics.",
                "**Our model:** `python -m se.enhance` cleans any wav file or folder with one of our checkpoints.",
-               "**Interactive:** `app/gradio_app.py` is a web page where you upload or record speech, choose a model "
-               "(for example the baseline or an ablated version), listen to the result and see the spectrograms. "
-               "`notebooks/demo.ipynb` does the same in a notebook, with metrics per utterance."])
+               "**Listening comparison:** `notebooks/demo.ipynb` enhances a few test utterances with the baseline and "
+               "the ablated checkpoints, plays them, and shows spectrograms and metrics per utterance. Some effects, "
+               "such as missing phase estimation, are easier to hear than to read from PESQ."])
     R.code(["bash scripts/demo_official_mpsenet.sh data/voicebank_demand_16k",
             "python -m se.enhance --ckpt runs/a00_baseline/checkpoints/best.pt --input noisy.wav --output out/",
-            "python app/gradio_app.py --ckpt runs/a00_baseline/checkpoints/best.pt"])
+            "jupyter notebook notebooks/demo.ipynb"])
 
     # ------------------------------------------------------------ 5 method
     R.h1("5  MP-SENet in depth")
@@ -714,7 +714,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
              ["src/se/", "data loading, model, losses, metrics, `train.py`, `evaluate.py`, `enhance.py`"],
              ["scripts/", "dataset download, results collection, official-model demo, scoring any folder"],
              ["slurm/", "single run, job array for all experiments, multi-GPU, noisy baseline"],
-             ["app/, notebooks/", "web demo (Gradio) and demo notebook"],
+             ["notebooks/", "demo notebook: listen to and compare the ablation runs"],
              ["tests/", "unit tests for shapes, losses, metrics and configuration"],
              ["docs/", "literature review, ablation design, slides and this report (both auto-generated)"]],
             [3.4, 13.0], caption="Repository layout.", center_from=9)
@@ -743,7 +743,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     # ------------------------------------------------------------ appendix + refs
     R.h1("Appendix A  Work division")
     R.table([["Member", "Student ID", "Tasks", "Share"],
-             ["Chau Kien Dat", "25C15036", "Literature survey (P1–P6) and comparison, official demo, web app and notebook, slides, video; report Ch. 1–4", "50%"],
+             ["Chau Kien Dat", "25C15036", "Literature survey (P1–P6) and comparison, official demo and notebook, slides, video; report Ch. 1–4", "50%"],
              ["Nguyen Vi Khang", "25C15043", "Re-implementation, configs, HPC training, evaluation metrics, ablation analysis, proposed improvements; report Ch. 5–9", "50%"]],
             [3.2, 2.6, 8.8, 1.8], center_from=3)
 

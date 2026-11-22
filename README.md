@@ -5,7 +5,7 @@ Final project for the **Speech Processing** course (HCMUS, Master's program), re
 This repository contains:
 
 1. **Literature review** of recent speech-enhancement papers (TASLP, Interspeech, NeurIPS, ICLR): see [`docs/literature_review.md`](docs/literature_review.md)
-2. **Demo:** the official MP-SENet pretrained model ([`scripts/demo_official_mpsenet.sh`](scripts/demo_official_mpsenet.sh)), plus our own notebook and web demo
+2. **Demo:** the official MP-SENet pretrained model ([`scripts/demo_official_mpsenet.sh`](scripts/demo_official_mpsenet.sh)), plus our own enhancement script and a notebook for listening to the ablation runs
 3. **Ablation study:** a clean re-implementation of MP-SENet (Lu et al., Interspeech 2023) with config switches for 10 ablations: [`docs/ablation_design.md`](docs/ablation_design.md)
 4. **Proposed improvements:** a multi-resolution STFT loss and perceptual contrast stretching (PCS) of the target, evaluated like the ablations
 
@@ -15,7 +15,7 @@ Report: [`docs/report/report.pdf`](docs/report/report.pdf) · Slides: [`docs/sli
 
 | Student ID | Name | Tasks |
 |---|---|---|
-| 25C15036 | Chau Kien Dat | literature survey, demo & web app, slides, video |
+| 25C15036 | Chau Kien Dat | literature survey, demo, slides, video |
 | 25C15043 | Nguyen Vi Khang | re-implementation, HPC ablation runs, evaluation, report |
 
 ## Repository layout
@@ -45,7 +45,6 @@ se-ablation/
 │   ├── score_dir.py            # score any folder of enhanced wavs with our metrics
 │   └── demo_official_mpsenet.sh
 ├── slurm/                      # sbatch scripts for HPC (single run, job array, DDP, noisy baseline)
-├── app/gradio_app.py           # web demo: upload/record audio, compare checkpoints, spectrograms
 ├── notebooks/demo.ipynb        # listen + spectrograms + metrics for a few utterances
 ├── docs/                       # literature review, ablation design, report, slides
 ├── results/                    # aggregated results (filled after training)
@@ -122,9 +121,8 @@ python -m se.enhance  --ckpt runs/a00_baseline/checkpoints/best.pt --input my_no
 # official MP-SENet code + pretrained checkpoint, scored with our metric suite
 bash scripts/demo_official_mpsenet.sh data/voicebank_demand_16k
 
-# web demo (for the video)
-pip install -e ".[app]"
-python app/gradio_app.py --ckpt runs/a00_baseline/checkpoints/best.pt --ckpt runs/p03_mrstft_pcs/checkpoints/best.pt
+# listen to and compare the ablation runs
+jupyter notebook notebooks/demo.ipynb
 ```
 
 ## 6. Experiments

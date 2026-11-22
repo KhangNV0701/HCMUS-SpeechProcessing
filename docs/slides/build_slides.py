@@ -553,7 +553,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     title(s, "Demo: official model and our pipeline", "Everything is scored with the same metric suite")
     steps = [("Prepare", "prepare_vbd.py\n48 → 16 kHz"), ("Official", "MP-SENet\npretrained ckpt"),
              ("Ours", "se.train / se.enhance"), ("Score", "PESQ, STOI, CSIG…\nscore_dir.py"),
-             ("Show", "Gradio web app\n+ notebook")]
+             ("Listen", "demo.ipynb\nablation runs")]
     for i, (h, d) in enumerate(steps):
         x = 0.6 + i * 2.5
         box(s, x, 1.9, 2.1, 1.75, fill=TINT)
@@ -564,12 +564,12 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
             arrow(s, x + 2.12, 2.78, x + 2.48, 2.78)
     code = ("bash scripts/demo_official_mpsenet.sh data/voicebank_demand_16k\n"
             "python -m se.enhance --ckpt runs/a00_baseline/checkpoints/best.pt --input noisy.wav --output out/\n"
-            "python app/gradio_app.py --ckpt runs/a00_baseline/checkpoints/best.pt")
+            "jupyter notebook notebooks/demo.ipynb   # listen to baseline vs ablated runs")
     box(s, 0.6, 4.0, 12.15, 1.45, fill=INK)
     text(s, 0.85, 4.12, 11.7, 1.25, code.split("\n"), size=13, font="Courier New", color="F3E9F7")
     text(s, 0.6, 5.7, 12.15, 0.9, [[("In the video: ", {"bold": True, "color": MAGENTA}),
-                                    ("enhance a recorded noisy sentence live, switch between the baseline and ablated "
-                                     "checkpoints, and compare spectrograms and PESQ / STOI.", {})]], size=15)
+                                    ("run the official checkpoint on test files, then play the same utterance through the baseline "
+                                     "and ablated checkpoints and compare spectrograms and PESQ / STOI.", {})]], size=15)
     footer(s, n)
 
     # 12 ── architecture -------------------------------------------------
@@ -769,7 +769,6 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
             "│               train.py · evaluate.py · enhance.py",
             "├── scripts/      prepare_vbd · collect_results · demo",
             "├── slurm/        train · ablation_array · ddp",
-            "├── app/          gradio_app.py (web demo)",
             "├── notebooks/    demo.ipynb",
             "├── tests/        pytest: shapes, losses, metrics",
             "└── docs/         review · ablation design · slides"]
@@ -813,7 +812,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     s = new()
     title(s, "Team and task split")
     rows = [["Member", "Student ID", "Tasks", "Share"],
-            ["Chau Kien Dat", "25C15036", "Literature survey, demo & web app, slides, video", "50%"],
+            ["Chau Kien Dat", "25C15036", "Literature survey, demo, slides, video", "50%"],
             ["Nguyen Vi Khang", "25C15043", "Re-implementation, HPC ablation runs, evaluation, report", "50%"]]
     table(s, 0.6, 1.9, 12.15, rows, col_w=[2.6, 2.0, 6.0, 1.55], size=15, row_h=0.6)
     footer(s, n)
