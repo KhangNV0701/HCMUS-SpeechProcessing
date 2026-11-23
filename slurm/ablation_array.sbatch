@@ -3,13 +3,15 @@
 #   sbatch --array=0-13 slurm/ablation_array.sbatch            # all 14 runs
 #   sbatch --array=0-13%4 slurm/ablation_array.sbatch          # at most 4 GPUs at once
 #   EPOCHS=50 sbatch --array=0-13 slurm/ablation_array.sbatch  # shorter schedule for all runs
+# Email on end/failure: sbatch --mail-user=you@example.com ...
 #SBATCH --job-name=se-ablation
-#SBATCH --partition=gpu
+#SBATCH --partition=amperenodes-medium
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --time=48:00:00
+#SBATCH --time=20:00:00
 #SBATCH --output=logs/%x-%A_%a.out
+#SBATCH --mail-type=END,FAIL
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"

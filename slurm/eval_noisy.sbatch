@@ -1,10 +1,12 @@
 #!/bin/bash
 # Metrics of the unprocessed noisy test set (reference row of the ablation table). CPU only.
+# Email on end/failure: sbatch --mail-user=you@example.com ...
 #SBATCH --job-name=se-eval-noisy
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=16G
 #SBATCH --time=02:00:00
 #SBATCH --output=logs/%x-%j.out
+#SBATCH --mail-type=END,FAIL
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 mkdir -p logs

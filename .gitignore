@@ -9,7 +9,8 @@ venv/
 # data, experiments and third-party code are never committed
 data/
 runs/
-logs/
+logs/*
+!logs/.gitkeep
 third_party/
 demo_outputs/
 *.pt

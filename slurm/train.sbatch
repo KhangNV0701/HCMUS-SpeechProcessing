@@ -2,13 +2,15 @@
 # Train + evaluate ONE configuration.
 #   sbatch slurm/train.sbatch configs/base.yaml [extra.overrides=...]
 # Adjust partition / account / modules to your cluster.
+# Email on end/failure: sbatch --mail-user=you@example.com ...
 #SBATCH --job-name=se-train
-#SBATCH --partition=gpu
+#SBATCH --partition=amperenodes-medium
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --time=48:00:00
+#SBATCH --time=20:00:00
 #SBATCH --output=logs/%x-%j.out
+#SBATCH --mail-type=END,FAIL
 
 set -euo pipefail
 CONFIG=${1:?usage: sbatch slurm/train.sbatch <config.yaml> [overrides...]}

@@ -1,13 +1,15 @@
 #!/bin/bash
 # Multi-GPU (single node) training with torchrun.  Note: batch_size is PER GPU.
 #   sbatch slurm/train_ddp.sbatch configs/base.yaml
+# Email on end/failure: sbatch --mail-user=you@example.com ...
 #SBATCH --job-name=se-ddp
-#SBATCH --partition=gpu
+#SBATCH --partition=amperenodes-medium
 #SBATCH --gres=gpu:4
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=64G
-#SBATCH --time=24:00:00
+#SBATCH --time=20:00:00
 #SBATCH --output=logs/%x-%j.out
+#SBATCH --mail-type=END,FAIL
 
 set -euo pipefail
 CONFIG=${1:?usage: sbatch slurm/train_ddp.sbatch <config.yaml> [overrides...]}
