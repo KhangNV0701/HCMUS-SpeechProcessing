@@ -7,12 +7,12 @@ venv/
 .pytest_cache/
 
 # data, experiments and third-party code are never committed
-data/
-runs/
-logs/*
-!logs/.gitkeep
-third_party/
-demo_outputs/
+/data/
+/runs/
+/logs/*
+!/logs/.gitkeep
+/third_party/
+/demo_outputs/
 *.pt
 *.wav
 !assets/samples/*.wav
