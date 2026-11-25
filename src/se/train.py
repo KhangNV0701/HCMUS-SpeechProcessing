@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import os
 import time
 from pathlib import Path
 
@@ -127,6 +128,10 @@ def main(argv=None):
         start_epoch, step, best = state["epoch"] + 1, state["step"], state["best"]
         if is_main_process():
             print(f"[se] resumed from {resume} (epoch {start_epoch})")
+        if start_epoch >= tc.epochs and (out_dir / "eval" / "summary.json").exists():
+            if is_main_process():
+                print(f"[se] {out_dir.name} already trained and evaluated, nothing to do")
+            return
 
     if world > 1:
         generator = DDP(generator, device_ids=[local_rank] if device.type == "cuda" else None)
@@ -216,14 +221,17 @@ def main(argv=None):
             if score > best:
                 best = score
                 torch.save({"generator": g_state, "config": cfg.to_dict(), "epoch": epoch,
-                            "score": best, "n_params": n_params}, ckpt_dir / "best.pt")
+                            "score": best, "n_params": n_params}, ckpt_dir / "best.pt.tmp")
+                os.replace(ckpt_dir / "best.pt.tmp", ckpt_dir / "best.pt")
             torch.save({"generator": g_state, "optim_g": optim_g.state_dict(),
                         "sched_g": sched_g.state_dict(),
                         "discriminator": unwrap(discriminator).state_dict() if use_gan else None,
                         "optim_d": optim_d.state_dict() if use_gan else None,
                         "sched_d": sched_d.state_dict() if use_gan else None,
                         "config": cfg.to_dict(), "epoch": epoch, "step": step, "best": best,
-                        "n_params": n_params}, ckpt_dir / "last.pt")
+                        "n_params": n_params}, ckpt_dir / "last.pt.tmp")
+            # atomic: a job killed mid-write (time limit) never leaves a corrupt last.pt
+            os.replace(ckpt_dir / "last.pt.tmp", ckpt_dir / "last.pt")
             if log_fields is None:
                 log_fields = list(row.keys())
                 new_file = not log_path.exists()
