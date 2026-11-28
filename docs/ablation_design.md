@@ -40,7 +40,7 @@ Loss = 0.9·L_mag + 0.3·(L_IP + L_GD + L_IAF) + 0.1·L_com + 0.2·L_time + 0.1�
 
 ## 4. Experiments
 
-With a limited GPU budget (10 epochs per run, one GPU at a time) we run **one ablation per main idea** of
+With a limited GPU budget (5 epochs per run, one GPU at a time) we run **one ablation per main idea** of
 MP-SENet: the training signal (a01), phase supervision (a02), the phase decoder itself (a03, the paper's core
 claim) and the backbone (a04), plus the two proposals P1 and P2 (`configs/experiments.txt`). The others are
 implemented and kept as future work (`configs/experiments_full.txt` runs all of them).
@@ -85,7 +85,7 @@ training on DNS-Challenge data to test generalisation beyond VB-D noise.
 
 ## 6. How to read the results
 
-* ΔPESQ around ±0.03 is usually within seed noise on VB-D; after only 10 epochs, treat < 0.05 as inconclusive. Look at CSIG/CBAK/COVL/STOI/SI-SDR together.
+* ΔPESQ around ±0.03 is usually within seed noise on VB-D; after only 5 epochs, treat < 0.05 as inconclusive. Look at CSIG/CBAK/COVL/STOI/SI-SDR together.
 * For the GAN ablation (a01), PESQ is expected to drop while SI-SDR may *rise*: the discriminator optimises perceived
   quality, not waveform fidelity. Report both.
 * For phase ablations (a02, a03), listen to the outputs: noisy-phase artefacts sound "rough" or "robotic" even when

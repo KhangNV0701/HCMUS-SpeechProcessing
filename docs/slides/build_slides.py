@@ -653,7 +653,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
                                    [("Test set (824) used once, for final numbers", {"color": WHITE})],
                                    [("Same seed, epochs, selection (best val PESQ)", {"color": WHITE})],
                                    [("PESQ, CSIG, CBAK, COVL, SSNR, STOI, SI-SDR, params, RTF", {"color": WHITE})],
-                                   [("7 runs × 10 epochs, one SLURM job array", {"color": "E6DDEB"})]], size=14, spacing=10)
+                                   [("7 runs × 5 epochs, one SLURM job array", {"color": "E6DDEB"})]], size=14, spacing=10)
     footer(s, n)
 
     # 15 ── results table -----------------------------------------------
@@ -726,7 +726,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     text(s, 7.85, 1.75, 4.9, 0.5, heads, size=19, bold=True, font=HEAD, color=MAGENTA)
     text(s, 7.85, 2.3, 4.9, 3.2, bullets, size=14, spacing=8)
     box(s, 7.85, 5.35, 4.9, 1.3, fill=PLUM)
-    text(s, 8.05, 5.42, 4.5, 1.15, "10-epoch budget: read ΔPESQ below ~0.05 as inconclusive; confirm with a paired "
+    text(s, 8.05, 5.42, 4.5, 1.15, "5-epoch budget: read ΔPESQ below ~0.05 as inconclusive; confirm with a paired "
          "test on per_file.csv and listen to the outputs.", size=13, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
     footer(s, n)
 

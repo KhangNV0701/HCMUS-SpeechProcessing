@@ -612,7 +612,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
              ["Sampling rate / STFT", "16 kHz; FFT 400, hop 100, Hann window 400 (25 ms / 6.25 ms)"],
              ["Training segments", "2 s random crops, batch size 4"],
              ["Optimiser", "AdamW, learning rate 5·10⁻⁴, β = (0.8, 0.99); learning rate × 0.99 every epoch"],
-             ["Training length", "10 epochs for every run (compute budget); see Section 6.2"],
+             ["Training length", "5 epochs for every run (compute budget); see Section 6.2"],
              ["Model size", "64 channels, 4 TS-Conformer blocks, 4 attention heads, conv kernel 31"],
              ["Model selection", "best PESQ on the held-out validation speakers"],
              ["Input normalisation", "each noisy utterance is scaled to unit RMS; the output is scaled back"]],
@@ -628,7 +628,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
         "(training signal), the phase losses and the phase decoder (the paper's core claim), and the Conformer "
         "backbone (architecture). The remaining six are implemented and listed in Section 6.6 as future work.")
     R.h2("6.2  Protocol")
-    R.p("Every run trains for **10 epochs**, much shorter than in the paper, so absolute scores are below the "
+    R.p("Every run trains for **5 epochs**, much shorter than in the paper, so absolute scores are below the "
         "published PESQ of 3.50. Because all runs share the same budget, seed and selection rule, the *differences* "
         "between runs are still a fair comparison; small differences should be read with care (Section 6.5).")
     R.figure("fig_split.png", "Data split. Two training speakers are held out for validation, so the test set is used "
@@ -680,7 +680,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
                "**a04 (BiLSTM)** shows how much of the quality comes from attention.",
                "Differences of about **±0.03 PESQ** are within run-to-run noise on this benchmark. For close cases we "
                "recommend repeating with 2–3 seeds and running a paired test on the per-utterance scores "
-               "(`per_file.csv`). After only 10 epochs the models are still improving, so we treat differences "
+               "(`per_file.csv`). After only 5 epochs the models are still improving, so we treat differences "
                "below about 0.05 PESQ as inconclusive."])
     R.h2("6.6  Left for future work")
     R.p("These experiments are fully implemented (one config file each in `configs/ablation/`) and can be run with "

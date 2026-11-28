@@ -2,7 +2,7 @@
 # Run every experiment listed in configs/experiments.txt as a SLURM job array.
 #   sbatch --array=0-6%1 slurm/ablation_array.sbatch           # the 7 core runs, one at a time
 #   EXPERIMENTS=configs/experiments_full.txt sbatch --array=0-13%1 ...   # all 14 (incl. future-work runs)
-#   EPOCHS=30 sbatch --array=0-6%1 slurm/ablation_array.sbatch # longer schedule (default: 10 epochs)
+#   EPOCHS=30 sbatch --array=0-6%1 slurm/ablation_array.sbatch # longer schedule (default: 5 epochs)
 # Email on end/failure: sbatch --mail-user=you@example.com ...
 #SBATCH --job-name=se-ablation
 #SBATCH --partition=amperenodes-medium

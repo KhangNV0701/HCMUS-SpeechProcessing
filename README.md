@@ -99,13 +99,13 @@ torchrun --standalone --nproc_per_node=4 -m se.train --config configs/base.yaml
 ```bash
 sbatch slurm/eval_noisy.sbatch                         # reference row: unprocessed noisy input
 sbatch --array=0-6%1 slurm/ablation_array.sbatch       # the 7 core runs (configs/experiments.txt), one at a time
-EPOCHS=30 sbatch --array=0-6%1 slurm/ablation_array.sbatch   # longer schedule (default: 10 epochs)
+EPOCHS=30 sbatch --array=0-6%1 slurm/ablation_array.sbatch   # longer schedule (default: 5 epochs)
 EXPERIMENTS=configs/experiments_full.txt sbatch --array=0-13%1 slurm/ablation_array.sbatch   # all 14, incl. future work
 ```
 Jobs resume automatically from `runs/<name>/checkpoints/last.pt`, so a job that hits the time limit can just be resubmitted.
 
-**Compute estimate:** every run trains for 10 epochs by default (`train.epochs` in `configs/base.yaml`), about
-2–3 h on one Ampere GPU (11.5k × 2 s segments, batch 4). PESQ for the discriminator is computed on the CPU, so give
+**Compute estimate:** every run trains for 5 epochs by default (`train.epochs` in `configs/base.yaml`): about
+1.5 h on an A100 or 3–4 h on a P100 for runs with the metric GAN (11.5k × 2 s segments, batch 4). PESQ for the discriminator is computed on the CPU, so give
 each job ≥ 8 CPU cores. The paper trains far longer, so absolute scores are lower, but all runs share the same budget.
 
 ### Collect results
