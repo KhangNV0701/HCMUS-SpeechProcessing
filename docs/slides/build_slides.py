@@ -635,24 +635,25 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     s = new()
     title(s, "Ablation design: change one factor at a time", "Every config inherits configs/base.yaml and changes exactly one key")
     rows = [["ID", "Change", "Question"],
-            ["a01", "no metric discriminator", "Real gain, or PESQ over-fitting?"],
-            ["a02", "no phase losses", "Can phase be learned without them?"],
-            ["a03", "no consistency loss", "Need a consistent spectrogram?"],
-            ["a04", "no time + complex losses", "Value of multi-domain terms"],
-            ["a05", "magnitude-only (noisy phase)", "Core claim: explicit phase"],
-            ["a06", "complex-mapping decoder", "Parallel mag/phase vs complex"],
-            ["a07", "no compression (c = 1)", "Dynamic-range compression"],
-            ["a08", "2 TS-Conformer blocks", "Depth vs quality / speed"],
-            ["a09", "BiLSTM instead of Conformer", "Attention+conv vs recurrence"],
-            ["a10", "plain sigmoid mask (β = 1)", "Can the mask amplify (> 1)?"]]
-    table(s, 0.6, 1.75, 8.3, rows, col_w=[0.75, 3.35, 4.2], size=13, row_h=0.43)
+            ["a01", "no metric discriminator", "Training signal: real gain, or PESQ over-fitting?"],
+            ["a02", "no phase losses", "Phase: can it be learned without them?"],
+            ["a05", "magnitude-only (noisy phase)", "Core claim: is explicit phase worth it?"],
+            ["a09", "BiLSTM instead of Conformer", "Backbone: attention+conv vs recurrence"]]
+    table(s, 0.6, 1.75, 8.3, rows, col_w=[0.75, 3.35, 4.2], size=14, row_h=0.5)
+    box(s, 0.6, 4.4, 8.3, 2.08, fill=TINT)
+    text(s, 0.85, 4.52, 7.9, 1.9,
+         [[("Implemented, left for future work", {"bold": True, "size": 15, "color": MAGENTA})],
+          [("a03 no consistency loss · a04 no time + complex losses · a06 complex-mapping decoder · "
+            "a07 no compression · a08 2 Conformer blocks · a10 plain sigmoid mask · p03 P1 + P2", {"color": MUTED})],
+          [("One config each in configs/ablation/; run with EXPERIMENTS=configs/experiments_full.txt",
+            {"color": MUTED, "size": 12})]], size=13, spacing=6)
     box(s, 9.2, 1.75, 3.55, 4.73, fill=PLUM)
     text(s, 9.45, 1.95, 3.1, 4.4, [[("Protocol", {"bold": True, "size": 20, "color": AMBER, "font": HEAD})],
                                    [("VB-D 16 kHz; p226 & p287 held out for validation", {"color": WHITE})],
                                    [("Test set (824) used once, for final numbers", {"color": WHITE})],
                                    [("Same seed, epochs, selection (best val PESQ)", {"color": WHITE})],
                                    [("PESQ, CSIG, CBAK, COVL, SSNR, STOI, SI-SDR, params, RTF", {"color": WHITE})],
-                                   [("14 SLURM array jobs on HPC", {"color": "E6DDEB"})]], size=14, spacing=10)
+                                   [("7 runs × 10 epochs, one SLURM job array", {"color": "E6DDEB"})]], size=14, spacing=10)
     footer(s, n)
 
     # 15 ── results table -----------------------------------------------
@@ -676,7 +677,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
         table(s, 0.6, 1.7, 12.15, rows, col_w=[0.8, 4.35, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
               size=11 if len(rows) > 12 else 12, row_h=rh, highlight_rows=tuple(hl))
     else:
-        names = ["noisy", "a00", "a01", "a02", "a03", "a04", "a05", "a06", "a07", "a08", "a09", "a10"]
+        names = ["noisy", "a00", "a01", "a02", "a05", "a09"]
         rows = [header] + [[nm, "", "TBD", "TBD", "TBD", "TBD", "TBD", "TBD", "TBD"] for nm in names]
         desc = {"noisy": "Noisy input (no processing)", "a00": "Full baseline (MP-SENet-style)",
                 "a01": "no metric discriminator", "a02": "no phase losses", "a03": "no consistency loss",
@@ -686,7 +687,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
                 "a10": "plain sigmoid mask (β = 1)"}
         for row in rows[1:]:
             row[1] = desc[row[0]]
-        table(s, 0.6, 1.7, 12.15, rows, col_w=[0.8, 4.35, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], size=12, row_h=0.36,
+        table(s, 0.6, 1.7, 12.15, rows, col_w=[0.8, 4.35, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], size=13, row_h=0.5,
               highlight_rows=(2,))
         text(s, 0.6, 6.45, 12.15, 0.4, "Results pending: training runs on the HPC cluster. Run "
              "scripts/collect_results.py, then rebuild this deck to fill the table.", size=12, italic=True, color=CORAL)
@@ -720,13 +721,13 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
         heads = "Hypotheses to test"
         bullets = ["• a05 (noisy phase) should cost the most: explicit phase is the paper's core claim",
                    "• a01 (no GAN): PESQ drops, but SI-SDR may rise; the GAN tunes for the metric",
-                   "• a07 (no compression): quiet bins are under-weighted, so more residual noise",
+                   "• a02 (no phase losses): with a05, separates phase losses from the phase decoder",
                    "• a09 (BiLSTM): close in PESQ, but slower, and worse for long context"]
     text(s, 7.85, 1.75, 4.9, 0.5, heads, size=19, bold=True, font=HEAD, color=MAGENTA)
     text(s, 7.85, 2.3, 4.9, 3.2, bullets, size=14, spacing=8)
     box(s, 7.85, 5.35, 4.9, 1.3, fill=PLUM)
-    text(s, 8.05, 5.42, 4.5, 1.15, "ΔPESQ around ±0.03 is within seed noise on VB-D: confirm with a paired test on "
-         "per_file.csv and listen to the outputs.", size=13, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
+    text(s, 8.05, 5.42, 4.5, 1.15, "10-epoch budget: read ΔPESQ below ~0.05 as inconclusive; confirm with a paired "
+         "test on per_file.csv and listen to the outputs.", size=13, color=WHITE, anchor=MSO_ANCHOR.MIDDLE)
     footer(s, n)
 
     # 17 ── proposals -----------------------------------------------------
@@ -750,8 +751,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     g = [round(float(v), 3) for v in pcs400_gains(201)]
     xs = [f"{k * 8 / 200:.0f} kHz" if k % 25 == 0 else "" for k in range(201)]
     line_chart(s, 6.85, 1.75, 5.9, 3.3, xs, g, "PCS gain g(f) per frequency bin")
-    rows = [["Run", "Change", "PESQ"], ["p01", "+ MR-STFT loss", "TBD"], ["p02", "+ PCS target", "TBD"],
-            ["p03", "+ both", "TBD"]]
+    rows = [["Run", "Change", "PESQ"], ["p01", "+ MR-STFT loss", "TBD"], ["p02", "+ PCS target", "TBD"]]
     if results:
         rmap = {r["run"].split("_")[0]: r for r in results}
         for row in rows[1:]:
@@ -776,7 +776,7 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     text(s, 0.85, 1.95, 6.2, 4.6, tree, size=13, font="Courier New", color="F3E9F7", spacing=3)
     steps = [("Install", "pip install -e \".[dev]\" · pytest -q"),
              ("Data", "python scripts/prepare_vbd.py --out data"),
-             ("Train all", "sbatch --array=0-13%4 slurm/ablation_array.sbatch"),
+             ("Train all", "sbatch --array=0-6%1 slurm/ablation_array.sbatch"),
              ("Report", "python scripts/collect_results.py"),
              ("Slides", "python docs/slides/build_slides.py")]
     for i, (h, d) in enumerate(steps):
@@ -791,15 +791,15 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     text(s, 0.8, 0.8, 11, 0.8, "Conclusion & future work", size=36, bold=True, font=HEAD, color=WHITE)
     cols = [("What we did", ["Surveyed 6 recent papers across 3 families",
                              "Ran the official MP-SENet demo",
-                             "Re-implemented it (2.05 M params) with 10 ablations",
+                             "Re-implemented it (2.05 M params); 4 key ablations",
                              "Proposed MR-STFT loss and PCS target"]),
             ("What we learn", ["Which components carry the gain (results slide)",
                                "Phase modelling vs metric-GAN contribution",
                                "Accuracy vs cost of the TF backbone"]),
-            ("Next", ["Mamba blocks for linear-time context",
-                      "Causal / streaming variant for real time",
-                      "Vietnamese noisy–clean data and fine-tuning",
-                      "DNS-Challenge for generalisation"])]
+            ("Next", ["Run the other 6 ablations and P1 + P2 together",
+                      "Train longer to compare with published scores",
+                      "Mamba blocks; causal / streaming variant",
+                      "Vietnamese noisy–clean data and fine-tuning"])]
     for i, (h, b) in enumerate(cols):
         x = 0.8 + i * 4.0
         box(s, x, 2.0, 3.7, 4.3, fill=PLUM)

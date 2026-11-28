@@ -1,14 +1,7 @@
 configs/base.yaml
 configs/ablation/a01_no_metric_disc.yaml
 configs/ablation/a02_no_phase_loss.yaml
-configs/ablation/a03_no_consistency.yaml
-configs/ablation/a04_no_time_complex.yaml
 configs/ablation/a05_mag_only.yaml
-configs/ablation/a06_complex_mapping.yaml
-configs/ablation/a07_no_compression.yaml
-configs/ablation/a08_two_tf_blocks.yaml
 configs/ablation/a09_lstm_tf_blocks.yaml
-configs/ablation/a10_sigmoid_mask.yaml
 configs/ablation/p01_mrstft.yaml
 configs/ablation/p02_pcs.yaml
-configs/ablation/p03_mrstft_pcs.yaml

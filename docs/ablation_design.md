@@ -40,19 +40,32 @@ Loss = 0.9·L_mag + 0.3·(L_IP + L_GD + L_IAF) + 0.1·L_com + 0.2·L_time + 0.1�
 
 ## 4. Experiments
 
+With a limited GPU budget (10 epochs per run, one GPU at a time) we run **one ablation per main idea** of
+MP-SENet: the training signal (a01), phase supervision (a02), the phase decoder itself (a05, the paper's core
+claim) and the backbone (a09), plus the two proposals P1 and P2 (`configs/experiments.txt`). The others are
+implemented and kept as future work (`configs/experiments_full.txt` runs all of them).
+
+**Run:**
+
 | ID | Factor removed / changed | Question it answers |
 |---|---|---|
 | a00 | — (full model) | reference |
 | a01 | no metric discriminator (`loss.metric=0`) | How much does PESQ-driven GAN training add? Is it only metric over-fitting (check STOI/SI-SDR)? |
 | a02 | no phase losses | Can the phase decoder learn useful phase without explicit anti-wrapping supervision? |
+| a05 | magnitude-only decoder, noisy phase | **Core claim of the paper:** value of explicit phase estimation |
+| a09 | BiLSTM instead of Conformer | Attention + convolution vs. recurrent sequence modelling |
+
+**Future work (implemented, not run):**
+
+| ID | Factor removed / changed | Question it answers |
+|---|---|---|
 | a03 | no STFT-consistency loss | Does enforcing a consistent spectrogram matter? |
 | a04 | no time L1 + complex losses | Value of the waveform- and complex-domain terms |
-| a05 | magnitude-only decoder, noisy phase | **Core claim of the paper:** value of explicit phase estimation |
 | a06 | single complex-mapping decoder | Parallel mag + phase vs. the common complex-spectrum mapping |
 | a07 | no magnitude compression (c = 1) | Effect of power-law compression on the dynamic range |
 | a08 | 2 instead of 4 TS-Conformer blocks | Depth vs. quality / speed trade-off |
-| a09 | BiLSTM instead of Conformer | Attention + convolution vs. recurrent sequence modelling |
 | a10 | plain sigmoid mask (β = 1) | Learnable sigmoid with β = 2 lets the mask amplify (> 1) |
+| p03 | P1 + P2 combined | Do the two proposals add up? |
 
 ## 5. Proposed improvements (part 4 of the assignment)
 
@@ -64,7 +77,7 @@ Loss = 0.9·L_mag + 0.3·(L_IP + L_GD + L_IAF) + 0.1·L_com + 0.2·L_time + 0.1�
    made sharper in the bands that matter most for intelligibility (SII band-importance gains 1.0–1.4 on log1p
    magnitude). SEMamba reports +0.14 PESQ from PCS on a Mamba backbone; we test whether this carries over to the
    Conformer backbone. It also adds no inference cost.
-3. **P3 – P1 + P2 combined.**
+3. **P3 – P1 + P2 combined** (future work: only worthwhile if P1 and P2 each help).
 
 Further ideas, discussed but not implemented because of the compute budget: Mamba blocks instead of Conformers
 (linear complexity, as in SEMamba); a causal / streaming variant with chunked attention for real-time use; and
@@ -72,7 +85,7 @@ training on DNS-Challenge data to test generalisation beyond VB-D noise.
 
 ## 6. How to read the results
 
-* ΔPESQ around ±0.03 is usually within seed noise on VB-D. Look at CSIG/CBAK/COVL/STOI/SI-SDR together.
+* ΔPESQ around ±0.03 is usually within seed noise on VB-D; after only 10 epochs, treat < 0.05 as inconclusive. Look at CSIG/CBAK/COVL/STOI/SI-SDR together.
 * For the GAN ablation (a01), PESQ is expected to drop while SI-SDR may *rise*: the discriminator optimises perceived
   quality, not waveform fidelity. Report both.
 * For phase ablations (a02, a05), listen to the outputs: noisy-phase artefacts sound "rough" or "robotic" even when

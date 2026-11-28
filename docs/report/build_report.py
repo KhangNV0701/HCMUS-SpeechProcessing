@@ -299,17 +299,22 @@ def fnum(v, n=2):
         return "–"
 
 
+# Ablations we ran: one per main design idea of MP-SENet (training signal, phase, backbone).
 ABLATIONS = [
     ("a01", "Remove the metric discriminator (no GAN)", "Is the PESQ gain real, or is the model just tuned to the metric?"),
     ("a02", "Remove the anti-wrapping phase losses", "Can the phase decoder learn useful phase without direct supervision?"),
+    ("a05", "Magnitude-only decoder; re-use the noisy phase", "The paper's main claim: is explicit phase estimation worth it?"),
+    ("a09", "BiLSTM instead of Conformer", "Attention + convolution vs. recurrent modelling"),
+]
+# Implemented and configured (configs/ablation/), but not run within our compute budget.
+FUTURE_ABLATIONS = [
     ("a03", "Remove the STFT consistency loss", "Does it matter that the predicted spectrogram is a valid STFT?"),
     ("a04", "Remove time-domain L1 and complex losses", "Do the waveform and complex-domain terms add anything?"),
-    ("a05", "Magnitude-only decoder; re-use the noisy phase", "The paper's main claim: is explicit phase estimation worth it?"),
-    ("a06", "One decoder that maps directly to the complex spectrum", "Parallel magnitude + phase vs. the common complex mapping"),
+    ("a06", "One decoder that maps directly to the complex spectrum", "Parallel magnitude + phase vs. complex mapping"),
     ("a07", "No magnitude compression (c = 1)", "Does compressing the dynamic range help?"),
     ("a08", "2 instead of 4 TS-Conformer blocks", "How much depth is needed? Quality vs. speed"),
-    ("a09", "BiLSTM instead of Conformer", "Attention + convolution vs. recurrent modelling"),
     ("a10", "Plain sigmoid mask (β = 1, fixed slope)", "Does letting the mask amplify (values > 1) help?"),
+    ("p03", "P1 + P2 combined", "Do the two proposed improvements add up?"),
 ]
 
 
@@ -353,8 +358,9 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
         "predict clean audio tokens.",
         "**Demo (Chapter 4).** We run the authors' official pretrained MP-SENet and our own pipeline, and score both "
         "with the same metrics; a notebook lets you listen to the outputs of the different ablation runs.",
-        "**Ablation study (Chapters 5–6).** We re-implemented MP-SENet (2.05 M parameters) and defined 10 experiments "
-        "that each remove or replace exactly one component, to find which parts actually matter.",
+        "**Ablation study (Chapters 5–6).** We re-implemented MP-SENet (2.05 M parameters) and ran four experiments "
+        "that each remove or replace exactly one key component, to find which parts actually matter. Six more "
+        "ablations are implemented and left for future work.",
         "**Improvements (Chapter 7).** We propose two training-only changes with no extra inference cost: a "
         "multi-resolution STFT loss and perceptual contrast stretching (PCS) of the training target.",
     ])
@@ -580,12 +586,12 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
              "weight. Right: a learnable sigmoid with β = 2 lets the mask go above 1, so it can also restore "
              "attenuated speech.")
     R.bullets(["**Magnitude compression (c = 0.3).** Speech spectra span a huge range of loudness. Raising them to "
-               "the power 0.3 lifts the quiet bins, so the network and the loss do not ignore them. Ablation a07 "
-               "removes this.",
+               "the power 0.3 lifts the quiet bins, so the network and the loss do not ignore them. Removing it "
+               "(a07) is left for future work.",
                "**Learnable sigmoid mask (β = 2).** A normal sigmoid can only reduce energy. With β = 2 and a "
-               "learnable slope for each frequency, the mask can also amplify. Ablation a10 tests a plain sigmoid.",
-               "**Phase via atan2.** Predicting (r, i) and taking the angle always gives a valid phase. Ablations a05 "
-               "and a06 replace this with the noisy phase or with complex mapping."])
+               "learnable slope for each frequency, the mask can also amplify (a plain sigmoid, a10, is future work).",
+               "**Phase via atan2.** Predicting (r, i) and taking the angle always gives a valid phase. Ablation a05 "
+               "replaces it with the noisy phase."])
     R.h2("5.3  Training objectives")
     R.p(f"The model is trained with six losses at once (Figure {R.fig_no + 1}).")
     R.figure("fig_losses.png", "The six objectives and their weights in the total loss.", width_cm=13.5)
@@ -606,6 +612,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
              ["Sampling rate / STFT", "16 kHz; FFT 400, hop 100, Hann window 400 (25 ms / 6.25 ms)"],
              ["Training segments", "2 s random crops, batch size 4"],
              ["Optimiser", "AdamW, learning rate 5·10⁻⁴, β = (0.8, 0.99); learning rate × 0.99 every epoch"],
+             ["Training length", "10 epochs for every run (compute budget); see Section 6.2"],
              ["Model size", "64 channels, 4 TS-Conformer blocks, 4 attention heads, conv kernel 31"],
              ["Model selection", "best PESQ on the held-out validation speakers"],
              ["Input normalisation", "each noisy utterance is scaled to unit RMS; the output is scaled back"]],
@@ -617,16 +624,22 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     R.p("An **ablation study** removes or replaces one component at a time and measures how much worse (or better) "
         "the model gets. The bigger the drop, the more that component matters. Every experiment uses the same data, "
         "seed, number of epochs and model-selection rule; only one setting changes.")
+    R.p("With a limited GPU budget we chose the **four ablations that test MP-SENet's main ideas**: the metric GAN "
+        "(training signal), the phase losses and the phase decoder (the paper's core claim), and the Conformer "
+        "backbone (architecture). The remaining six are implemented and listed in Section 6.6 as future work.")
     R.h2("6.2  Protocol")
+    R.p("Every run trains for **10 epochs**, much shorter than in the paper, so absolute scores are below the "
+        "published PESQ of 3.50. Because all runs share the same budget, seed and selection rule, the *differences* "
+        "between runs are still a fair comparison; small differences should be read with care (Section 6.5).")
     R.figure("fig_split.png", "Data split. Two training speakers are held out for validation, so the test set is used "
              "only once, for the final numbers. (The original code selects models on the test set, which slightly "
              "inflates results.)", width_cm=14)
     R.figure("fig_pipeline.png", "Experiment pipeline. Each configuration inherits `base.yaml` and changes one key; "
-             "14 runs are submitted as one SLURM job array; results are collected into tables and figures.",
+             "the 7 runs are submitted as one SLURM job array; results are collected into tables and figures.",
              width_cm=15.5)
     R.h2("6.3  Experiments")
     R.table([["ID", "What changes", "Question it answers"]] + [list(a) for a in ABLATIONS],
-            [1.2, 6.6, 8.6], caption="The ten ablations. a00 is the full baseline.", size=10, center_from=9)
+            [1.2, 6.6, 8.6], caption="The four ablations we ran. a00 is the full baseline.", size=10, center_from=9)
     R.h2("6.4  Results")
     if rows:
         base = next((r for r in rows if r["run"] == "a00_baseline"), None)
@@ -662,11 +675,18 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
                "contribution. The difference is often easier to *hear* (rough, robotic sound) than to see in PESQ.",
                "**a01 (no GAN)** should lower PESQ but may *raise* SI-SDR: the discriminator optimises perceived "
                "quality, not waveform accuracy. Comparing both metrics shows whether the GAN only fits PESQ.",
-               "**a07 (no compression)** should leave more residual noise in quiet regions.",
-               "**a08 / a09** show how much of the quality comes from model depth and from attention.",
+               "**a02 (no phase losses)** shows whether the phase decoder needs direct supervision; together "
+               "with a05 it separates the value of the phase *losses* from the value of the phase *decoder*.",
+               "**a09 (BiLSTM)** shows how much of the quality comes from attention.",
                "Differences of about **±0.03 PESQ** are within run-to-run noise on this benchmark. For close cases we "
                "recommend repeating with 2–3 seeds and running a paired test on the per-utterance scores "
-               "(`per_file.csv`)."])
+               "(`per_file.csv`). After only 10 epochs the models are still improving, so we treat differences "
+               "below about 0.05 PESQ as inconclusive."])
+    R.h2("6.6  Left for future work")
+    R.p("These experiments are fully implemented (one config file each in `configs/ablation/`) and can be run with "
+        "the same job script (`EXPERIMENTS=configs/experiments_full.txt`), but did not fit our compute budget:")
+    R.table([["ID", "What changes", "Question it answers"]] + [list(a) for a in FUTURE_ABLATIONS],
+            [1.2, 6.6, 8.6], caption="Implemented but not run: future work.", size=10, center_from=9)
 
     # ------------------------------------------------------------ 7 improvements
     R.h1("7  Proposed improvements")
@@ -687,8 +707,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     R.h2("7.3  Results")
     prow = [["Run", "Change", "PESQ", "ΔPESQ vs. a00", "STOI", "SI-SDR"],
             ["p01", "+ multi-resolution STFT loss", "TBD", "TBD", "TBD", "TBD"],
-            ["p02", "+ PCS target", "TBD", "TBD", "TBD", "TBD"],
-            ["p03", "+ both", "TBD", "TBD", "TBD", "TBD"]]
+            ["p02", "+ PCS target", "TBD", "TBD", "TBD", "TBD"]]
     if rows:
         rmap = {r["run"].split("_")[0]: r for r in rows}
         b = rmap.get("a00")
@@ -699,7 +718,9 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
                            fnum(r["stoi"], 3), fnum(r["si_sdr"])]
     R.table(prow, [1.4, 6.0, 2.0, 2.8, 2.0, 2.2], caption="Proposed improvements on the test set.")
     R.h2("7.4  Further ideas (not implemented)")
-    R.bullets(["**Mamba blocks** instead of Conformers: linear cost in utterance length (SEMamba).",
+    R.bullets(["**Combining P1 and P2** (config `p03`): only worthwhile if each helps on its own.",
+               "**Longer training** of the baseline and the best proposal, to compare with published numbers.",
+               "**Mamba blocks** instead of Conformers: linear cost in utterance length (SEMamba).",
                "**Causal / streaming version** with chunked attention, for real-time use in calls and hearing aids.",
                "**Vietnamese data:** build a noisy/clean Vietnamese set (e.g. VIVOS mixed with DEMAND/MUSAN noise) "
                "and fine-tune.",
@@ -721,7 +742,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     R.p("Reproducing everything takes five commands:")
     cmds = [("pip install -e \".[dev]\" && pytest -q", "install and run the tests"),
             ("python scripts/prepare_vbd.py --out data", "download + resample VoiceBank-DEMAND"),
-            ("sbatch --array=0-13%4 slurm/ablation_array.sbatch", "train + evaluate all 14 runs"),
+            ("sbatch --array=0-6%1 slurm/ablation_array.sbatch", "train + evaluate the 7 runs"),
             ("python scripts/collect_results.py", "results table and chart"),
             ("python docs/report/build_report.py", "rebuild this report")]
     R.code([f"{c:<52}# {d}" for c, d in cmds])
@@ -735,8 +756,8 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
         "perceptual metrics and, more recently, generate speech with diffusion or language models. Discriminative "
         "models such as MP-SENet still give the best scores on standard benchmarks for their size, while generative "
         "models are more robust in unseen conditions.")
-    R.p("We re-implemented MP-SENet, built a fully reproducible ablation framework with ten single-factor "
-        "experiments, and proposed two training-only improvements. The study shows *which* of MP-SENet's many "
+    R.p("We re-implemented MP-SENet, built a fully reproducible ablation framework, ran four single-factor "
+        "ablations of its key ideas (six more are ready to run), and proposed two training-only improvements. The study shows *which* of MP-SENet's many "
         "components carry its performance, which gives practical guidance for building smaller or faster models and "
         "for applying them to new languages such as Vietnamese.")
 

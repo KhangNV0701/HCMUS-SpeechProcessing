@@ -45,7 +45,7 @@ loss:                          # weight 0 disables a term
   mrstft: 0.0                  # (proposed) multi-resolution STFT loss
 
 train:
-  epochs: 100
+  epochs: 10                   # compute budget for the course project (paper: far longer)
   batch_size: 4
   num_workers: 4
   lr: 5.0e-4

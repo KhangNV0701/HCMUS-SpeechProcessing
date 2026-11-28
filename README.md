@@ -25,7 +25,8 @@ se-ablation/
 ├── configs/
 │   ├── base.yaml               # full MP-SENet-style baseline (a00)
 │   ├── debug.yaml              # tiny CPU smoke test
-│   ├── experiments.txt         # list of runs used by the SLURM array / local runner
+│   ├── experiments.txt         # the 7 core runs used by the SLURM array / local runner
+│   ├── experiments_full.txt    # all 14 runs (incl. future-work ablations)
 │   └── ablation/               # a01–a10 ablations, p01–p03 proposed improvements (one factor each)
 ├── src/se/
 │   ├── data/                   # paired VoiceBank-DEMAND dataset, speaker-held-out validation split
@@ -97,14 +98,15 @@ torchrun --standalone --nproc_per_node=4 -m se.train --config configs/base.yaml
 
 ```bash
 sbatch slurm/eval_noisy.sbatch                         # reference row: unprocessed noisy input
-sbatch --array=0-13%4 slurm/ablation_array.sbatch      # 14 runs, at most 4 at a time
-EPOCHS=50 sbatch --array=0-13 slurm/ablation_array.sbatch   # shorter schedule for all runs
+sbatch --array=0-6%1 slurm/ablation_array.sbatch       # the 7 core runs (configs/experiments.txt), one at a time
+EPOCHS=30 sbatch --array=0-6%1 slurm/ablation_array.sbatch   # longer schedule (default: 10 epochs)
+EXPERIMENTS=configs/experiments_full.txt sbatch --array=0-13%1 slurm/ablation_array.sbatch   # all 14, incl. future work
 ```
 Jobs resume automatically from `runs/<name>/checkpoints/last.pt`, so a job that hits the time limit can just be resubmitted.
 
-**Compute estimate:** one 100-epoch run of the full model (11.5k × 2 s segments, batch 4) takes roughly a day on a
-single modern GPU. PESQ for the discriminator is computed on the CPU, so give each job ≥ 8 CPU cores. If the
-budget is tight, run all ablations with `EPOCHS=30–50` and only the baseline and best proposal for the full schedule.
+**Compute estimate:** every run trains for 10 epochs by default (`train.epochs` in `configs/base.yaml`), about
+2–3 h on one Ampere GPU (11.5k × 2 s segments, batch 4). PESQ for the discriminator is computed on the CPU, so give
+each job ≥ 8 CPU cores. The paper trains far longer, so absolute scores are lower, but all runs share the same budget.
 
 ### Collect results
 
@@ -127,22 +129,21 @@ jupyter notebook notebooks/demo.ipynb
 
 ## 6. Experiments
 
+Core runs (`configs/experiments.txt`, 7 runs): one ablation per main idea of MP-SENet, plus our two proposals.
+
 | ID | Change w.r.t. baseline |
 |---|---|
 | a00 | full model (MP-SENet-style, 2.05 M params) |
 | a01 | no metric discriminator |
 | a02 | no anti-wrapping phase losses |
-| a03 | no STFT consistency loss |
-| a04 | no time + complex losses |
 | a05 | magnitude-only decoder (noisy phase) |
-| a06 | complex-mapping decoder |
-| a07 | no magnitude compression (c = 1) |
-| a08 | 2 TS-Conformer blocks |
 | a09 | BiLSTM instead of Conformer |
-| a10 | plain sigmoid mask |
 | p01 | **+ multi-resolution STFT loss** (proposed) |
 | p02 | **+ PCS target** (proposed) |
-| p03 | **+ both** (proposed) |
+
+Future work: implemented with a config each, not run in our budget (`configs/experiments_full.txt` runs everything):
+a03 no STFT consistency loss · a04 no time + complex losses · a06 complex-mapping decoder ·
+a07 no magnitude compression (c = 1) · a08 2 TS-Conformer blocks · a10 plain sigmoid mask · p03 P1 + P2 combined.
 
 The result table is generated into `results/ablation_results.md` after the runs finish. To put the numbers into
 the slides, run `python docs/slides/build_slides.py` (it reads that CSV), then export the PDF (see `docs/slides/README.md`).

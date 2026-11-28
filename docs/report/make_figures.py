@@ -277,7 +277,7 @@ def fig_pcs():
 def fig_pipeline():
     fig, ax = canvas(11, 2.3, (0, 11), (0, 2.3))
     steps = [("Prepare", "download VB-D\n48 → 16 kHz", PLUM), ("Configure", "base.yaml +\none change", MAGENTA),
-             ("Train", "SLURM array\n14 runs", CORAL), ("Evaluate", "824 test files\n8 metrics", AMBER),
+             ("Train", "SLURM array\n7 runs", CORAL), ("Evaluate", "824 test files\n8 metrics", AMBER),
              ("Collect", "CSV · table\nchart", PLUM), ("Report", "slides & report\nauto-filled", MAGENTA)]
     for i, (h, d, c) in enumerate(steps):
         x = 0.1 + i * 1.83

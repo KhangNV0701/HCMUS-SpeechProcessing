@@ -1,15 +1,15 @@
 #!/bin/bash
 # Run every experiment listed in configs/experiments.txt as a SLURM job array.
-#   sbatch --array=0-13 slurm/ablation_array.sbatch            # all 14 runs
-#   sbatch --array=0-13%4 slurm/ablation_array.sbatch          # at most 4 GPUs at once
-#   EPOCHS=50 sbatch --array=0-13 slurm/ablation_array.sbatch  # shorter schedule for all runs
+#   sbatch --array=0-6%1 slurm/ablation_array.sbatch           # the 7 core runs, one at a time
+#   EXPERIMENTS=configs/experiments_full.txt sbatch --array=0-13%1 ...   # all 14 (incl. future-work runs)
+#   EPOCHS=30 sbatch --array=0-6%1 slurm/ablation_array.sbatch # longer schedule (default: 10 epochs)
 # Email on end/failure: sbatch --mail-user=you@example.com ...
 #SBATCH --job-name=se-ablation
 #SBATCH --partition=amperenodes-medium
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --time=20:00:00
+#SBATCH --time=04:00:00
 #SBATCH --output=logs/%x-%A_%a.out
 #SBATCH --mail-type=END,FAIL
 
@@ -18,7 +18,7 @@ cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 mkdir -p logs
 source slurm/env.sh
 
-mapfile -t CONFIGS < configs/experiments.txt
+mapfile -t CONFIGS < "${EXPERIMENTS:-configs/experiments.txt}"
 CONFIG=${CONFIGS[$SLURM_ARRAY_TASK_ID]}
 EXTRA=()
 if [[ -n "${EPOCHS:-}" ]]; then EXTRA+=("train.epochs=${EPOCHS}"); fi
