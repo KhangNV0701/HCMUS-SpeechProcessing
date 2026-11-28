@@ -23,4 +23,4 @@ source slurm/env.sh
 echo "[slurm] host=$(hostname) config=$CONFIG overrides=$*"
 nvidia-smi || true
 # Re-submitting the same job resumes from runs/<name>/checkpoints/last.pt automatically.
-python -m se.train --config "$CONFIG" train.num_workers=${SLURM_CPUS_PER_TASK:-8} "$@"
+python -m se.train --config "$CONFIG" train.num_workers=4 "$@"

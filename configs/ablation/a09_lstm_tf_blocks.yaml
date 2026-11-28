@@ -1,4 +1,0 @@
-# A9: replace Conformers with BiLSTMs in the time-frequency blocks
-base: ../base.yaml
-experiment: {name: a09_lstm_tf_blocks}
-model: {tf_block: lstm}

@@ -1,0 +1,4 @@
+# A9: 2 instead of 4 two-stage Conformer blocks
+base: ../base.yaml
+experiment: {name: a09_two_tf_blocks}
+model: {num_tf_blocks: 2}

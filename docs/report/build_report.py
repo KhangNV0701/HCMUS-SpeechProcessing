@@ -303,16 +303,16 @@ def fnum(v, n=2):
 ABLATIONS = [
     ("a01", "Remove the metric discriminator (no GAN)", "Is the PESQ gain real, or is the model just tuned to the metric?"),
     ("a02", "Remove the anti-wrapping phase losses", "Can the phase decoder learn useful phase without direct supervision?"),
-    ("a05", "Magnitude-only decoder; re-use the noisy phase", "The paper's main claim: is explicit phase estimation worth it?"),
-    ("a09", "BiLSTM instead of Conformer", "Attention + convolution vs. recurrent modelling"),
+    ("a03", "Magnitude-only decoder; re-use the noisy phase", "The paper's main claim: is explicit phase estimation worth it?"),
+    ("a04", "BiLSTM instead of Conformer", "Attention + convolution vs. recurrent modelling"),
 ]
 # Implemented and configured (configs/ablation/), but not run within our compute budget.
 FUTURE_ABLATIONS = [
-    ("a03", "Remove the STFT consistency loss", "Does it matter that the predicted spectrogram is a valid STFT?"),
-    ("a04", "Remove time-domain L1 and complex losses", "Do the waveform and complex-domain terms add anything?"),
-    ("a06", "One decoder that maps directly to the complex spectrum", "Parallel magnitude + phase vs. complex mapping"),
-    ("a07", "No magnitude compression (c = 1)", "Does compressing the dynamic range help?"),
-    ("a08", "2 instead of 4 TS-Conformer blocks", "How much depth is needed? Quality vs. speed"),
+    ("a05", "Remove the STFT consistency loss", "Does it matter that the predicted spectrogram is a valid STFT?"),
+    ("a06", "Remove time-domain L1 and complex losses", "Do the waveform and complex-domain terms add anything?"),
+    ("a07", "One decoder that maps directly to the complex spectrum", "Parallel magnitude + phase vs. complex mapping"),
+    ("a08", "No magnitude compression (c = 1)", "Does compressing the dynamic range help?"),
+    ("a09", "2 instead of 4 TS-Conformer blocks", "How much depth is needed? Quality vs. speed"),
     ("a10", "Plain sigmoid mask (β = 1, fixed slope)", "Does letting the mask amplify (values > 1) help?"),
     ("p03", "P1 + P2 combined", "Do the two proposed improvements add up?"),
 ]
@@ -587,10 +587,10 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
              "attenuated speech.")
     R.bullets(["**Magnitude compression (c = 0.3).** Speech spectra span a huge range of loudness. Raising them to "
                "the power 0.3 lifts the quiet bins, so the network and the loss do not ignore them. Removing it "
-               "(a07) is left for future work.",
+               "(a08) is left for future work.",
                "**Learnable sigmoid mask (β = 2).** A normal sigmoid can only reduce energy. With β = 2 and a "
                "learnable slope for each frequency, the mask can also amplify (a plain sigmoid, a10, is future work).",
-               "**Phase via atan2.** Predicting (r, i) and taking the angle always gives a valid phase. Ablation a05 "
+               "**Phase via atan2.** Predicting (r, i) and taking the angle always gives a valid phase. Ablation a03 "
                "replaces it with the noisy phase."])
     R.h2("5.3  Training objectives")
     R.p(f"The model is trained with six losses at once (Figure {R.fig_no + 1}).")
@@ -671,13 +671,13 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
         R.callout("Results pending", "Training runs on the HPC cluster. After `scripts/collect_results.py`, rebuilding "
                   "this report fills in the table, adds the results figure and lists the most important components.")
     R.h2("6.5  What we expect, and how to read the numbers")
-    R.bullets(["**a05 (noisy phase)** should cause one of the largest drops, since explicit phase is the paper's key "
+    R.bullets(["**a03 (noisy phase)** should cause one of the largest drops, since explicit phase is the paper's key "
                "contribution. The difference is often easier to *hear* (rough, robotic sound) than to see in PESQ.",
                "**a01 (no GAN)** should lower PESQ but may *raise* SI-SDR: the discriminator optimises perceived "
                "quality, not waveform accuracy. Comparing both metrics shows whether the GAN only fits PESQ.",
                "**a02 (no phase losses)** shows whether the phase decoder needs direct supervision; together "
-               "with a05 it separates the value of the phase *losses* from the value of the phase *decoder*.",
-               "**a09 (BiLSTM)** shows how much of the quality comes from attention.",
+               "with a03 it separates the value of the phase *losses* from the value of the phase *decoder*.",
+               "**a04 (BiLSTM)** shows how much of the quality comes from attention.",
                "Differences of about **±0.03 PESQ** are within run-to-run noise on this benchmark. For close cases we "
                "recommend repeating with 2–3 seeds and running a paired test on the per-utterance scores "
                "(`per_file.csv`). After only 10 epochs the models are still improving, so we treat differences "

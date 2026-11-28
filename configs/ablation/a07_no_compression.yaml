@@ -1,4 +1,0 @@
-# A7: no power-law compression of the magnitude (c = 1.0)
-base: ../base.yaml
-experiment: {name: a07_no_compression}
-stft: {compress_factor: 1.0}

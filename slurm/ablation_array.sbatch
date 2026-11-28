@@ -24,4 +24,4 @@ EXTRA=()
 if [[ -n "${EPOCHS:-}" ]]; then EXTRA+=("train.epochs=${EPOCHS}"); fi
 
 echo "[slurm] task=$SLURM_ARRAY_TASK_ID config=$CONFIG ${EXTRA[*]:-}"
-python -m se.train --config "$CONFIG" train.num_workers=${SLURM_CPUS_PER_TASK:-8} ${EXTRA[@]+"${EXTRA[@]}"}
+python -m se.train --config "$CONFIG" train.num_workers=4 ${EXTRA[@]+"${EXTRA[@]}"}

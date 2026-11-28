@@ -1,7 +1,7 @@
 configs/base.yaml
 configs/ablation/a01_no_metric_disc.yaml
 configs/ablation/a02_no_phase_loss.yaml
-configs/ablation/a05_mag_only.yaml
-configs/ablation/a09_lstm_tf_blocks.yaml
+configs/ablation/a03_mag_only.yaml
+configs/ablation/a04_lstm_tf_blocks.yaml
 configs/ablation/p01_mrstft.yaml
 configs/ablation/p02_pcs.yaml

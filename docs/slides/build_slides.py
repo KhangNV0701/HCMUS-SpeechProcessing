@@ -637,14 +637,14 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
     rows = [["ID", "Change", "Question"],
             ["a01", "no metric discriminator", "Training signal: real gain, or PESQ over-fitting?"],
             ["a02", "no phase losses", "Phase: can it be learned without them?"],
-            ["a05", "magnitude-only (noisy phase)", "Core claim: is explicit phase worth it?"],
-            ["a09", "BiLSTM instead of Conformer", "Backbone: attention+conv vs recurrence"]]
+            ["a03", "magnitude-only (noisy phase)", "Core claim: is explicit phase worth it?"],
+            ["a04", "BiLSTM instead of Conformer", "Backbone: attention+conv vs recurrence"]]
     table(s, 0.6, 1.75, 8.3, rows, col_w=[0.75, 3.35, 4.2], size=14, row_h=0.5)
     box(s, 0.6, 4.4, 8.3, 2.08, fill=TINT)
     text(s, 0.85, 4.52, 7.9, 1.9,
          [[("Implemented, left for future work", {"bold": True, "size": 15, "color": MAGENTA})],
-          [("a03 no consistency loss · a04 no time + complex losses · a06 complex-mapping decoder · "
-            "a07 no compression · a08 2 Conformer blocks · a10 plain sigmoid mask · p03 P1 + P2", {"color": MUTED})],
+          [("a05 no consistency loss · a06 no time + complex losses · a07 complex-mapping decoder · "
+            "a08 no compression · a09 2 Conformer blocks · a10 plain sigmoid mask · p03 P1 + P2", {"color": MUTED})],
           [("One config each in configs/ablation/; run with EXPERIMENTS=configs/experiments_full.txt",
             {"color": MUTED, "size": 12})]], size=13, spacing=6)
     box(s, 9.2, 1.75, 3.55, 4.73, fill=PLUM)
@@ -677,13 +677,13 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
         table(s, 0.6, 1.7, 12.15, rows, col_w=[0.8, 4.35, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
               size=11 if len(rows) > 12 else 12, row_h=rh, highlight_rows=tuple(hl))
     else:
-        names = ["noisy", "a00", "a01", "a02", "a05", "a09"]
+        names = ["noisy", "a00", "a01", "a02", "a03", "a04"]
         rows = [header] + [[nm, "", "TBD", "TBD", "TBD", "TBD", "TBD", "TBD", "TBD"] for nm in names]
         desc = {"noisy": "Noisy input (no processing)", "a00": "Full baseline (MP-SENet-style)",
-                "a01": "no metric discriminator", "a02": "no phase losses", "a03": "no consistency loss",
-                "a04": "no time + complex losses", "a05": "magnitude-only decoder (noisy phase)",
-                "a06": "complex-mapping decoder", "a07": "no magnitude compression (c = 1)",
-                "a08": "2 TS-Conformer blocks", "a09": "BiLSTM instead of Conformer",
+                "a01": "no metric discriminator", "a02": "no phase losses", "a05": "no consistency loss",
+                "a06": "no time + complex losses", "a03": "magnitude-only decoder (noisy phase)",
+                "a07": "complex-mapping decoder", "a08": "no magnitude compression (c = 1)",
+                "a09": "2 TS-Conformer blocks", "a04": "BiLSTM instead of Conformer",
                 "a10": "plain sigmoid mask (β = 1)"}
         for row in rows[1:]:
             row[1] = desc[row[0]]
@@ -719,10 +719,10 @@ def build(out: Path, results_csv: Path, data_root: Path | None):
                                      [("generated from results/ablation_results.csv", {"color": MUTED})]],
              size=15, align=PP_ALIGN.CENTER)
         heads = "Hypotheses to test"
-        bullets = ["• a05 (noisy phase) should cost the most: explicit phase is the paper's core claim",
+        bullets = ["• a03 (noisy phase) should cost the most: explicit phase is the paper's core claim",
                    "• a01 (no GAN): PESQ drops, but SI-SDR may rise; the GAN tunes for the metric",
-                   "• a02 (no phase losses): with a05, separates phase losses from the phase decoder",
-                   "• a09 (BiLSTM): close in PESQ, but slower, and worse for long context"]
+                   "• a02 (no phase losses): with a03, separates phase losses from the phase decoder",
+                   "• a04 (BiLSTM): close in PESQ, but slower, and worse for long context"]
     text(s, 7.85, 1.75, 4.9, 0.5, heads, size=19, bold=True, font=HEAD, color=MAGENTA)
     text(s, 7.85, 2.3, 4.9, 3.2, bullets, size=14, spacing=8)
     box(s, 7.85, 5.35, 4.9, 1.3, fill=PLUM)

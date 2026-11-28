@@ -22,8 +22,7 @@ from tqdm import tqdm
 
 from .data import PairedDataset, build_splits
 from .inference import _enhance_segment
-from .losses import GeneratorLoss, batch_pesq_normalized
-from .metrics import pesq_wb
+from .losses import GeneratorLoss, batch_pesq_normalized, init_pesq_pool, pesq_many
 from .models import MetricDiscriminator, build_generator
 from .utils import STFT, load_config, save_config
 from .utils.misc import (barrier, count_parameters, init_distributed, is_main_process,
@@ -43,7 +42,7 @@ def unwrap(m):
 def validate(generator, stft, loader, device, sr, use_pesq=True):
     generator.eval()
     g = unwrap(generator)
-    pesqs, mag_losses = [], []
+    pairs, mag_losses = [], []
     for clean, noisy, _ in loader:
         clean, noisy = clean.to(device), noisy.to(device)
         est = _enhance_segment(g, stft, noisy)
@@ -51,10 +50,8 @@ def validate(generator, stft, loader, device, sr, use_pesq=True):
         e_mag, _, _ = stft.analysis(est)
         mag_losses.append(torch.nn.functional.mse_loss(c_mag, e_mag).item())
         if use_pesq:
-            try:
-                pesqs.append(pesq_wb(clean[0].cpu().numpy(), est[0].cpu().numpy(), sr))
-            except Exception:
-                pass
+            pairs.append((clean[0].cpu().numpy(), est[0].cpu().numpy()))
+    pesqs = [p for p in pesq_many(pairs, sr) if p >= 0] if pairs else []  # parallel if the pool is up
     generator.train()
     return {"val_mag_loss": float(np.mean(mag_losses)),
             "val_pesq": float(np.mean(pesqs)) if pesqs else float("nan")}
@@ -104,6 +101,11 @@ def main(argv=None):
     generator = build_generator(cfg, stft.n_freq).to(device)
     use_gan = lc.get("metric", 0) > 0
     discriminator = MetricDiscriminator().to(device) if use_gan else None
+    if tc.get("tf32", True) and device.type == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = True  # Ampere+ tensor cores for fp32 matmuls
+        torch.backends.cudnn.allow_tf32 = True
+    if use_gan or tc.get("val_pesq", True):
+        init_pesq_pool(tc.get("pesq_workers", tc.batch_size))
     n_params = count_parameters(generator)
     if is_main_process():
         print(f"[se] generator parameters: {n_params / 1e6:.3f} M  | GAN: {use_gan}  | device: {device}")

@@ -41,8 +41,8 @@ Loss = 0.9·L_mag + 0.3·(L_IP + L_GD + L_IAF) + 0.1·L_com + 0.2·L_time + 0.1�
 ## 4. Experiments
 
 With a limited GPU budget (10 epochs per run, one GPU at a time) we run **one ablation per main idea** of
-MP-SENet: the training signal (a01), phase supervision (a02), the phase decoder itself (a05, the paper's core
-claim) and the backbone (a09), plus the two proposals P1 and P2 (`configs/experiments.txt`). The others are
+MP-SENet: the training signal (a01), phase supervision (a02), the phase decoder itself (a03, the paper's core
+claim) and the backbone (a04), plus the two proposals P1 and P2 (`configs/experiments.txt`). The others are
 implemented and kept as future work (`configs/experiments_full.txt` runs all of them).
 
 **Run:**
@@ -52,18 +52,18 @@ implemented and kept as future work (`configs/experiments_full.txt` runs all of 
 | a00 | — (full model) | reference |
 | a01 | no metric discriminator (`loss.metric=0`) | How much does PESQ-driven GAN training add? Is it only metric over-fitting (check STOI/SI-SDR)? |
 | a02 | no phase losses | Can the phase decoder learn useful phase without explicit anti-wrapping supervision? |
-| a05 | magnitude-only decoder, noisy phase | **Core claim of the paper:** value of explicit phase estimation |
-| a09 | BiLSTM instead of Conformer | Attention + convolution vs. recurrent sequence modelling |
+| a03 | magnitude-only decoder, noisy phase | **Core claim of the paper:** value of explicit phase estimation |
+| a04 | BiLSTM instead of Conformer | Attention + convolution vs. recurrent sequence modelling |
 
 **Future work (implemented, not run):**
 
 | ID | Factor removed / changed | Question it answers |
 |---|---|---|
-| a03 | no STFT-consistency loss | Does enforcing a consistent spectrogram matter? |
-| a04 | no time L1 + complex losses | Value of the waveform- and complex-domain terms |
-| a06 | single complex-mapping decoder | Parallel mag + phase vs. the common complex-spectrum mapping |
-| a07 | no magnitude compression (c = 1) | Effect of power-law compression on the dynamic range |
-| a08 | 2 instead of 4 TS-Conformer blocks | Depth vs. quality / speed trade-off |
+| a05 | no STFT-consistency loss | Does enforcing a consistent spectrogram matter? |
+| a06 | no time L1 + complex losses | Value of the waveform- and complex-domain terms |
+| a07 | single complex-mapping decoder | Parallel mag + phase vs. the common complex-spectrum mapping |
+| a08 | no magnitude compression (c = 1) | Effect of power-law compression on the dynamic range |
+| a09 | 2 instead of 4 TS-Conformer blocks | Depth vs. quality / speed trade-off |
 | a10 | plain sigmoid mask (β = 1) | Learnable sigmoid with β = 2 lets the mask amplify (> 1) |
 | p03 | P1 + P2 combined | Do the two proposals add up? |
 
@@ -88,5 +88,5 @@ training on DNS-Challenge data to test generalisation beyond VB-D noise.
 * ΔPESQ around ±0.03 is usually within seed noise on VB-D; after only 10 epochs, treat < 0.05 as inconclusive. Look at CSIG/CBAK/COVL/STOI/SI-SDR together.
 * For the GAN ablation (a01), PESQ is expected to drop while SI-SDR may *rise*: the discriminator optimises perceived
   quality, not waveform fidelity. Report both.
-* For phase ablations (a02, a05), listen to the outputs: noisy-phase artefacts sound "rough" or "robotic" even when
+* For phase ablations (a02, a03), listen to the outputs: noisy-phase artefacts sound "rough" or "robotic" even when
   PESQ changes little.

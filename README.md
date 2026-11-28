@@ -86,7 +86,7 @@ Any config value can be overridden from the command line with dotted keys.
 ```bash
 # one run (auto-evaluates best.pt on the test set when it finishes)
 python -m se.train --config configs/base.yaml
-python -m se.train --config configs/ablation/a05_mag_only.yaml train.epochs=50
+python -m se.train --config configs/ablation/a03_mag_only.yaml train.epochs=50
 
 # multi-GPU on one node (batch_size is per GPU)
 torchrun --standalone --nproc_per_node=4 -m se.train --config configs/base.yaml
@@ -136,14 +136,14 @@ Core runs (`configs/experiments.txt`, 7 runs): one ablation per main idea of MP-
 | a00 | full model (MP-SENet-style, 2.05 M params) |
 | a01 | no metric discriminator |
 | a02 | no anti-wrapping phase losses |
-| a05 | magnitude-only decoder (noisy phase) |
-| a09 | BiLSTM instead of Conformer |
+| a03 | magnitude-only decoder (noisy phase) |
+| a04 | BiLSTM instead of Conformer |
 | p01 | **+ multi-resolution STFT loss** (proposed) |
 | p02 | **+ PCS target** (proposed) |
 
 Future work: implemented with a config each, not run in our budget (`configs/experiments_full.txt` runs everything):
-a03 no STFT consistency loss · a04 no time + complex losses · a06 complex-mapping decoder ·
-a07 no magnitude compression (c = 1) · a08 2 TS-Conformer blocks · a10 plain sigmoid mask · p03 P1 + P2 combined.
+a05 no STFT consistency loss · a06 no time + complex losses · a07 complex-mapping decoder ·
+a08 no magnitude compression (c = 1) · a09 2 TS-Conformer blocks · a10 plain sigmoid mask · p03 P1 + P2 combined.
 
 The result table is generated into `results/ablation_results.md` after the runs finish. To put the numbers into
 the slides, run `python docs/slides/build_slides.py` (it reads that CSV), then export the PDF (see `docs/slides/README.md`).

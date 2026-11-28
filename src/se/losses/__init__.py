@@ -59,6 +59,31 @@ def _pesq_one(ref: np.ndarray, est: np.ndarray, sr: int) -> float:
         return -1.0
 
 
+_PESQ_POOL = None
+
+
+def init_pesq_pool(workers: int):
+    """Start a persistent process pool for PESQ (CPU-bound, the bottleneck of metric-GAN training).
+
+    PESQ is computed for every training batch; doing the items in parallel instead of one after
+    another roughly halves the epoch time of the GAN runs. ``workers <= 1`` keeps the serial path.
+    """
+    global _PESQ_POOL
+    if _PESQ_POOL is None and workers and workers > 1:
+        import multiprocessing as mp
+
+        _PESQ_POOL = mp.get_context("spawn").Pool(int(workers))
+    return _PESQ_POOL
+
+
+def pesq_many(pairs, sr: int = 16000) -> list[float]:
+    """PESQ for a list of (ref, est) numpy pairs; -1.0 marks a failed item."""
+    args = [(r, e, sr) for r, e in pairs]
+    if _PESQ_POOL is not None and len(args) > 1:
+        return _PESQ_POOL.starmap(_pesq_one, args)
+    return [_pesq_one(*a) for a in args]
+
+
 def batch_pesq_normalized(ref: torch.Tensor, est: torch.Tensor, sr: int = 16000):
     """Wide-band PESQ of each item, normalised to [0, 1] as (pesq - 1) / 3.5.
 
@@ -67,7 +92,7 @@ def batch_pesq_normalized(ref: torch.Tensor, est: torch.Tensor, sr: int = 16000)
     """
     ref_np = ref.detach().float().cpu().numpy()
     est_np = est.detach().float().cpu().numpy()
-    scores = [_pesq_one(r, e, sr) for r, e in zip(ref_np, est_np)]
+    scores = pesq_many(zip(ref_np, est_np), sr)
     if any(s < 0 for s in scores):
         return None
     return torch.tensor([(s - 1.0) / 3.5 for s in scores], dtype=torch.float32).view(-1, 1)

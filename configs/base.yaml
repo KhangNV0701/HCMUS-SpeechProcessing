@@ -56,6 +56,8 @@ train:
   val_every_epochs: 1
   val_max_files: 200
   val_pesq: true
+  pesq_workers: 4              # parallel PESQ processes (metric-GAN target + validation); 1 = serial
+  tf32: true                   # TF32 tensor-core matmuls on Ampere+ GPUs (A100)
   max_train_files: null        # debug: limit training set size
 
 eval:
