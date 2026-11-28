@@ -1,14 +1,14 @@
-# Slides
+# Slide
 
-* `slides.pdf`: the exported deck (submission file)
-* `build_slides.py`: generates `slides.pptx` with python-pptx. It fills the results table and chart from
-  `results/ablation_results.csv` when that file exists, and uses a real VoiceBank-DEMAND spectrogram when the data is present.
-* `export_pdf.ps1`: exports PDF (and PNGs with `-Png`) with PowerPoint on Windows.
-  Alternative: `soffice --headless --convert-to pdf slides.pptx`.
+* `slides.pdf`: bộ slide đã xuất (file nộp)
+* `build_slides.py`: sinh `slides.pptx` bằng python-pptx. Script tự điền bảng và biểu đồ kết quả từ
+  `results/ablation_results.csv` khi file đó tồn tại, và dùng spectrogram VoiceBank-DEMAND thật khi có dữ liệu.
+* `export_pdf.ps1`: xuất PDF (và PNG với `-Png`) bằng PowerPoint trên Windows.
+  Cách khác: `soffice --headless --convert-to pdf slides.pptx`.
 
 ```bash
-python scripts/collect_results.py           # after the HPC runs
+python scripts/collect_results.py           # sau khi chạy xong trên HPC
 python docs/slides/build_slides.py
 powershell -ExecutionPolicy Bypass -File docs/slides/export_pdf.ps1
 ```
-Speaker notes are included in the .pptx for the first slides; add your own for the video.
+File .pptx có ghi chú thuyết trình (speaker notes) cho các slide đầu; bổ sung ghi chú riêng khi quay video.

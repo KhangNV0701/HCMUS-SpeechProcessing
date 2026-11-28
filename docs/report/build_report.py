@@ -93,7 +93,7 @@ class Report:
         footer = self.doc.sections[0].footer
         p = footer.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = p.add_run("Speech Enhancement: survey and ablation study of MP-SENet   ·   page ")
+        r = p.add_run("Tăng cường tiếng nói: khảo sát và nghiên cứu ablation MP-SENet   ·   trang ")
         r.font.size, r.font.color.rgb = Pt(9), RGBColor.from_string(MUTED)
         self._field(p, "PAGE", size=9)
 
@@ -114,7 +114,7 @@ class Report:
                 el.set(qn("xml:space"), "preserve")
                 el.text = f" {instr} "
             if tag == "w:t":
-                el.text = "1" if instr == "PAGE" else "Right-click → Update field to build the table of contents."
+                el.text = "1" if instr == "PAGE" else "Nhấp chuột phải → Update Field để tạo mục lục."
             run._r.append(el)
 
     # ---------------------------------------------------------- inline markup
@@ -179,7 +179,7 @@ class Report:
         self.fig_no += 1
         c = self.doc.add_paragraph(style="Caption")
         c.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        self._runs(c, f"**Figure {self.fig_no}.** {caption}")
+        self._runs(c, f"**Hình {self.fig_no}.** {caption}")
         return self.fig_no
 
     def table(self, rows, widths_cm, caption=None, highlight=(), size=10, center_from=2, center_cols=None):
@@ -188,7 +188,7 @@ class Report:
             c = self.doc.add_paragraph(style="Caption")
             c.paragraph_format.keep_with_next = True
             c.paragraph_format.space_after = Pt(3)
-            self._runs(c, f"**Table {self.tab_no}.** {caption}")
+            self._runs(c, f"**Bảng {self.tab_no}.** {caption}")
         t = self.doc.add_table(rows=len(rows), cols=len(rows[0]))
         t.alignment = WD_TABLE_ALIGNMENT.CENTER
         t.autofit = False
@@ -292,6 +292,7 @@ class Report:
 
 
 # ================================================================== content
+# ================================================================== content
 def fnum(v, n=2):
     try:
         return f"{float(v):.{n}f}"
@@ -299,22 +300,30 @@ def fnum(v, n=2):
         return "–"
 
 
+VI_DESC = make_figures.VI_DESC
+
+
+def vi_desc(row):
+    key = "noisy" if row["run"] == "noisy" else row["run"].split("_")[0]
+    return VI_DESC.get(key, row.get("description", ""))
+
+
 # Ablations we ran: one per main design idea of MP-SENet (training signal, phase, backbone).
 ABLATIONS = [
-    ("a01", "Remove the metric discriminator (no GAN)", "Is the PESQ gain real, or is the model just tuned to the metric?"),
-    ("a02", "Remove the anti-wrapping phase losses", "Can the phase decoder learn useful phase without direct supervision?"),
-    ("a03", "Magnitude-only decoder; re-use the noisy phase", "The paper's main claim: is explicit phase estimation worth it?"),
-    ("a04", "BiLSTM instead of Conformer", "Attention + convolution vs. recurrent modelling"),
+    ("a01", "Bỏ metric discriminator (không GAN)", "Mức tăng PESQ là thật, hay mô hình chỉ đang “học tủ” theo metric?"),
+    ("a02", "Bỏ các loss pha anti-wrapping", "Decoder pha có học được pha hữu ích khi không được giám sát trực tiếp?"),
+    ("a03", "Decoder chỉ biên độ; dùng lại pha nhiễu", "Luận điểm chính của bài báo: ước lượng pha tường minh có đáng không?"),
+    ("a04", "BiLSTM thay cho Conformer", "Attention + tích chập so với mô hình hồi quy (recurrent)"),
 ]
 # Implemented and configured (configs/ablation/), but not run within our compute budget.
 FUTURE_ABLATIONS = [
-    ("a05", "Remove the STFT consistency loss", "Does it matter that the predicted spectrogram is a valid STFT?"),
-    ("a06", "Remove time-domain L1 and complex losses", "Do the waveform and complex-domain terms add anything?"),
-    ("a07", "One decoder that maps directly to the complex spectrum", "Parallel magnitude + phase vs. complex mapping"),
-    ("a08", "No magnitude compression (c = 1)", "Does compressing the dynamic range help?"),
-    ("a09", "2 instead of 4 TS-Conformer blocks", "How much depth is needed? Quality vs. speed"),
-    ("a10", "Plain sigmoid mask (β = 1, fixed slope)", "Does letting the mask amplify (values > 1) help?"),
-    ("p03", "P1 + P2 combined", "Do the two proposed improvements add up?"),
+    ("a05", "Bỏ loss nhất quán STFT", "Phổ dự đoán có cần là một STFT hợp lệ không?"),
+    ("a06", "Bỏ loss L1 miền thời gian và loss phức", "Các loss trên dạng sóng và miền phức có đóng góp gì?"),
+    ("a07", "Một decoder ánh xạ trực tiếp ra phổ phức", "Biên độ + pha song song so với ánh xạ phức"),
+    ("a08", "Không nén biên độ (c = 1)", "Nén dải động có giúp ích không?"),
+    ("a09", "2 thay vì 4 khối TS-Conformer", "Cần độ sâu bao nhiêu? Chất lượng so với tốc độ"),
+    ("a10", "Mask sigmoid thường (β = 1, độ dốc cố định)", "Cho mask khuếch đại (giá trị > 1) có giúp ích?"),
+    ("p03", "Kết hợp P1 + P2", "Hai cải tiến đề xuất có cộng dồn hiệu quả?"),
 ]
 
 
@@ -325,389 +334,401 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     # ------------------------------------------------------------ cover
     for _ in range(3):
         R.p("")
-    R.p("SPEECH PROCESSING · FINAL PROJECT · RESEARCH TRACK", size=11, color=MAGENTA, after=10)
+    R.p("XỬ LÝ TIẾNG NÓI · ĐỒ ÁN CUỐI KỲ · HƯỚNG NGHIÊN CỨU", size=11, color=MAGENTA, after=10)
     t = R.doc.add_paragraph(style="Title")
-    t.add_run("Speech Enhancement")
-    R.p("A survey of recent methods and an ablation study of MP-SENet", size=17, color=PLUM, after=28)
-    R.p("University of Science, VNU-HCM (HCMUS) · Master's program", size=11, color=MUTED, after=2)
-    R.p("Instructor: <instructor name>", size=11, color=MUTED, after=2)
-    R.p(f"{date.today():%B %Y}", size=11, color=MUTED, after=24)
-    R.p("**Group members and work division**", size=12, after=4)
-    R.table([["Member", "Student ID", "Main tasks", "Share"],
-             ["Chau Kien Dat", "25C15036", "Literature survey (Ch. 3), demo (Ch. 4), slides, video", "50%"],
-             ["Nguyen Vi Khang", "25C15043", "Re-implementation, ablation runs on HPC, evaluation (Ch. 5–8), report", "50%"]],
+    t.add_run("Tăng cường tiếng nói")
+    R.p("Tổng quan các phương pháp gần đây và nghiên cứu ablation trên MP-SENet", size=17, color=PLUM, after=28)
+    R.p("Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM · Chương trình Thạc sĩ", size=11, color=MUTED, after=2)
+    R.p("Giảng viên: PGS.TS. Đinh Điền, TS. Châu Thành Đức", size=11, color=MUTED, after=2)
+    R.p(f"Tháng {date.today().month} năm {date.today().year}", size=11, color=MUTED, after=24)
+    R.p("**Thành viên nhóm và phân công**", size=12, after=4)
+    R.table([["Thành viên", "MSHV", "Công việc chính", "Tỉ lệ"],
+             ["Chau Kien Dat", "25C15036", "Khảo sát tài liệu (Chương 3), demo (Chương 4), slide, viết báo cáo", "50%"],
+             ["Nguyen Vi Khang", "25C15043", "Cài đặt lại mô hình, chạy ablation trên HPC, đánh giá (Chương 5–8), video", "50%"]],
             [3.4, 2.6, 8.4, 1.8], size=10.5, center_from=3)
-    R.p("Code and data instructions: https://github.com/KhangNV0701/HCMUS-SpeechProcessing", size=10, color=MUTED)
+    R.p("Mã nguồn và hướng dẫn dữ liệu: https://github.com/KhangNV0701/HCMUS-SpeechProcessing", size=10, color=MUTED)
     R.page_break()
 
     # ------------------------------------------------------------ TOC
     h = R.doc.add_paragraph()
-    r = h.add_run("Contents")
+    r = h.add_run("Mục lục")
     r.font.name, r.font.size, r.bold = HEAD, Pt(20), True
     r.font.color.rgb = RGBColor.from_string(PLUM)
     R.toc()
     R.page_break()
 
     # ------------------------------------------------------------ summary
-    R.h1("Summary")
-    R.p("**Speech enhancement** removes background noise from a speech recording. This project has four parts:")
+    R.h1("Tóm tắt")
+    R.p("**Tăng cường tiếng nói (speech enhancement)** là bài toán loại bỏ nhiễu nền khỏi bản ghi tiếng nói. "
+        "Đồ án gồm bốn phần:")
     R.bullets([
-        "**Survey (Chapter 3).** We read six recent papers from top venues (IEEE/ACM TASLP, Interspeech, NeurIPS, "
-        "ICLR). Current methods fall into three families: *discriminative* models that predict a clean spectrogram "
-        "in one pass, *diffusion* models that generate clean speech step by step, and *language-model* methods that "
-        "predict clean audio tokens.",
-        "**Demo (Chapter 4).** We run the authors' official pretrained MP-SENet and our own pipeline, and score both "
-        "with the same metrics; a notebook lets you listen to the outputs of the different ablation runs.",
-        "**Ablation study (Chapters 5–6).** We re-implemented MP-SENet (2.05 M parameters) and ran four experiments "
-        "that each remove or replace exactly one key component, to find which parts actually matter. Six more "
-        "ablations are implemented and left for future work.",
-        "**Improvements (Chapter 7).** We propose two training-only changes with no extra inference cost: a "
-        "multi-resolution STFT loss and perceptual contrast stretching (PCS) of the training target.",
+        "**Khảo sát (Chương 3).** Chúng tôi đọc sáu bài báo gần đây ở các hội nghị/tạp chí hàng đầu (IEEE/ACM TASLP, "
+        "Interspeech, NeurIPS, ICLR). Các phương pháp hiện nay chia thành ba nhóm: mô hình *discriminative* dự đoán phổ "
+        "sạch trong một lần chạy, mô hình *diffusion* sinh tiếng nói sạch qua nhiều bước, và phương pháp dựa trên "
+        "*language model* dự đoán các token âm thanh sạch.",
+        "**Demo (Chương 4).** Demo dùng mô hình đã huấn luyện để làm sạch các bản ghi nhiễu trong tập test, cho nghe và "
+        "so sánh spectrogram trước/sau; một script khác chạy checkpoint chính thức của tác giả MP-SENet để tham chiếu. "
+        "Mọi đầu ra đều được chấm bằng cùng một bộ metric.",
+        "**Nghiên cứu ablation (Chương 5–6).** Chúng tôi cài đặt lại MP-SENet (2.05 M tham số) và chạy bốn thí nghiệm, "
+        "mỗi thí nghiệm bỏ hoặc thay đúng một thành phần chính, để biết phần nào thực sự quan trọng. Sáu ablation khác "
+        "đã được cài đặt sẵn và để lại cho hướng phát triển.",
+        "**Cải tiến (Chương 7).** Chúng tôi đề xuất hai thay đổi chỉ ở khâu huấn luyện, không tốn thêm chi phí suy "
+        "luận: loss STFT đa phân giải (multi-resolution STFT) và perceptual contrast stretching (PCS) cho mục tiêu "
+        "huấn luyện.",
     ])
     if rows:
         base = next((r for r in rows if r["run"] == "a00_baseline"), None)
         best = max((r for r in rows if r["run"] != "noisy" and r.get("pesq")), key=lambda r: float(r["pesq"]))
-        R.callout("Main result", [
-            f"Our baseline reaches **PESQ {fnum(base['pesq'], 3)}** on the VoiceBank-DEMAND test set "
-            f"(noisy input: {fnum(next(r for r in rows if r['run'] == 'noisy')['pesq'], 2)})." if base else "",
-            f"Best run: **{best['run']}** ({best['description']}), PESQ {fnum(best['pesq'], 3)}."])
+        noisy = next((r for r in rows if r["run"] == "noisy"), None)
+        R.callout("Kết quả chính", [
+            (f"Baseline của chúng tôi đạt **PESQ {fnum(base['pesq'], 3)}** trên tập test VoiceBank-DEMAND"
+             + (f" (đầu vào nhiễu: {fnum(noisy['pesq'], 2)})." if noisy else ".")) if base else "",
+            f"Lần chạy tốt nhất: **{best['run'].split('_')[0]}** ({vi_desc(best)}), PESQ {fnum(best['pesq'], 3)}."])
     else:
-        R.callout("Status of the experiments",
-                  "All code, configurations and job scripts are ready. The results tables in Chapters 6 and 7 are "
-                  "filled in automatically once the training runs on the HPC cluster finish "
+        R.callout("Trạng thái thí nghiệm",
+                  "Toàn bộ mã nguồn, cấu hình và script chạy job đã sẵn sàng. Các bảng kết quả ở Chương 6 và 7 sẽ "
+                  "được điền tự động khi các lần huấn luyện trên cụm HPC hoàn tất "
                   "(`python docs/report/build_report.py`).")
 
     # ------------------------------------------------------------ 1 intro
-    R.h1("1  Introduction")
-    R.h2("1.1  The problem")
-    R.p("A microphone rarely records only the speaker. Traffic, fans, other people and room echo are mixed in. "
-        "**Single-channel speech enhancement** tries to recover the clean speech *s* from the noisy recording "
-        "*y = s + n*, using only that one recording. No clean reference is available when the system is used.")
-    R.figure("fig_spectrogram.png", "Spectrograms show energy over time (x-axis) and frequency (y-axis). Speech "
-             "appears as bright stacked harmonics; noise fills the gaps between them. Enhancement should bring the "
-             "left picture as close as possible to the right one.")
-    R.p("Why it matters:")
-    R.bullets(["**Communication:** phone and video calls, hearing aids and assistive listening.",
-               "**Front-end for other systems:** speech recognition (ASR), speaker verification and keyword spotting "
-               "all degrade in noise.",
-               "**Data cleaning:** text-to-speech (TTS) corpora collected from the Internet are often noisy."])
-    R.h2("1.2  What we did")
-    R.bullets(["Surveyed recent work and compared methods on a common benchmark (Chapter 3).",
-               "Ran the official MP-SENet model as a demo (Chapter 4).",
-               "Re-implemented MP-SENet and explained each part in plain terms (Chapter 5).",
-               "Designed and ran a one-factor-at-a-time ablation study (Chapter 6).",
-               "Proposed and tested two improvements (Chapter 7).",
-               "Packaged everything as a reproducible repository (Chapter 8)."], numbered=True)
+    R.h1("1  Giới thiệu")
+    R.h2("1.1  Bài toán")
+    R.p("Micro hiếm khi chỉ thu được giọng người nói. Tiếng xe cộ, quạt, người khác và tiếng vang của phòng đều bị trộn "
+        "vào. **Tăng cường tiếng nói một kênh (single-channel speech enhancement)** cố gắng khôi phục tiếng nói sạch *s* "
+        "từ bản ghi nhiễu *y = s + n*, chỉ dùng duy nhất bản ghi đó. Khi hệ thống hoạt động thực tế, không có tín hiệu "
+        "sạch để tham chiếu.")
+    R.figure("fig_spectrogram.png", "Spectrogram biểu diễn năng lượng theo thời gian (trục x) và tần số (trục y). Tiếng "
+             "nói hiện ra thành các hài (harmonic) sáng xếp chồng; nhiễu lấp đầy khoảng trống giữa chúng. Tăng cường "
+             "tiếng nói cần đưa hình bên trái về gần nhất có thể với hình bên phải.")
+    R.p("Tại sao bài toán này quan trọng:")
+    R.bullets(["**Giao tiếp:** gọi điện thoại và gọi video, máy trợ thính và thiết bị hỗ trợ nghe.",
+               "**Tiền xử lý cho hệ thống khác:** nhận dạng tiếng nói (ASR), xác minh người nói và phát hiện từ khóa "
+               "đều kém đi khi có nhiễu.",
+               "**Làm sạch dữ liệu:** các kho dữ liệu text-to-speech (TTS) thu thập từ Internet thường bị nhiễu."])
+    R.h2("1.2  Những gì chúng tôi đã làm")
+    R.bullets(["Khảo sát các công trình gần đây và so sánh các phương pháp trên cùng một benchmark (Chương 3).",
+               "Xây dựng demo làm sạch tiếng nói và so sánh với mô hình chính thức của MP-SENet (Chương 4).",
+               "Cài đặt lại MP-SENet và giải thích từng thành phần một cách dễ hiểu (Chương 5).",
+               "Thiết kế và chạy nghiên cứu ablation thay đổi từng yếu tố một (Chương 6).",
+               "Đề xuất và thử nghiệm hai cải tiến (Chương 7).",
+               "Đóng gói toàn bộ thành một repository có thể tái lập (Chương 8)."], numbered=True)
 
     # ------------------------------------------------------------ 2 background
-    R.h1("2  Background")
-    R.h2("2.1  From waveform to spectrogram")
-    R.p("Most modern systems work on the **short-time Fourier transform (STFT)**. The signal is cut into short "
-        "overlapping frames (here 25 ms, moving 6.25 ms at a time). Each frame is turned into a spectrum with a "
-        "**magnitude** (how loud each frequency is) and a **phase** (where each frequency is in its cycle). At 16 kHz "
-        "with a 400-point FFT this gives 201 frequency bins per frame. The inverse STFT (iSTFT) turns a spectrogram "
-        "back into a waveform.")
-    R.p("Older systems only cleaned the magnitude and reused the noisy phase, because phase looks random and is "
-        "hard to predict. Newer work, including MP-SENet, shows that **estimating the phase too** gives clearly "
-        "better quality.")
-    R.h2("2.2  Masking and mapping")
-    R.bullets(["**Masking:** predict a number between 0 and about 1 for every time-frequency bin and multiply it with the "
-               "noisy magnitude. Bins dominated by noise get small values.",
-               "**Mapping:** predict the clean spectrum (magnitude, or real and imaginary parts) directly."])
-    R.h2("2.3  How quality is measured")
-    R.p("All papers in this report use the **VoiceBank-DEMAND** benchmark: 11,572 noisy/clean training pairs from "
-        "28 speakers and 824 test pairs from 2 unseen speakers, mixed with real noise recordings at 0–15 dB SNR "
-        "(training) and 2.5–17.5 dB (testing).")
-    R.table([["Metric", "Range", "What it tells you"],
-             ["PESQ (wide-band)", "1 – 4.5", "Perceived speech quality (ITU-T P.862.2). The main number in the field."],
-             ["STOI / ESTOI", "0 – 1", "How intelligible the speech is."],
-             ["CSIG", "1 – 5", "Predicted opinion score for *speech distortion*."],
-             ["CBAK", "1 – 5", "Predicted opinion score for *background noise intrusiveness*."],
-             ["COVL", "1 – 5", "Predicted *overall* quality."],
-             ["SSNR, SI-SDR", "dB", "Signal fidelity: how close the waveform is to the clean one."]],
-            [3.4, 2.0, 11.0], caption="Objective metrics used throughout this report (higher is better for all).",
+    R.h1("2  Kiến thức nền tảng")
+    R.h2("2.1  Từ dạng sóng đến spectrogram")
+    R.p("Phần lớn hệ thống hiện đại làm việc trên **biến đổi Fourier thời gian ngắn (short-time Fourier transform, "
+        "STFT)**. Tín hiệu được cắt thành các khung ngắn chồng lên nhau (ở đây dài 25 ms, mỗi lần dịch 6.25 ms). Mỗi "
+        "khung được biến thành một phổ gồm **biên độ (magnitude)**, tức mỗi tần số to bao nhiêu, và **pha (phase)**, tức "
+        "mỗi tần số đang ở vị trí nào trong chu kỳ. Ở 16 kHz với FFT 400 điểm, mỗi khung có 201 bin tần số. STFT ngược "
+        "(iSTFT) biến spectrogram trở lại thành dạng sóng.")
+    R.p("Các hệ thống cũ chỉ làm sạch biên độ và dùng lại pha nhiễu, vì pha trông như ngẫu nhiên và khó dự đoán. Các "
+        "công trình mới hơn, trong đó có MP-SENet, cho thấy **ước lượng cả pha** mang lại chất lượng tốt hơn rõ rệt.")
+    R.h2("2.2  Masking và mapping")
+    R.bullets(["**Masking:** dự đoán cho mỗi bin thời gian–tần số một số trong khoảng 0 đến khoảng 1 rồi nhân với biên "
+               "độ nhiễu. Các bin bị nhiễu lấn át sẽ nhận giá trị nhỏ.",
+               "**Mapping:** dự đoán trực tiếp phổ sạch (biên độ, hoặc phần thực và phần ảo)."])
+    R.h2("2.3  Đo chất lượng như thế nào")
+    R.p("Tất cả bài báo trong báo cáo này dùng benchmark **VoiceBank-DEMAND**: 11,572 cặp nhiễu/sạch để huấn luyện từ "
+        "28 người nói và 824 cặp test từ 2 người nói chưa gặp, trộn với nhiễu ghi âm thật ở SNR 0–15 dB (huấn luyện) và "
+        "2.5–17.5 dB (test).")
+    R.table([["Metric", "Khoảng giá trị", "Ý nghĩa"],
+             ["PESQ (wide-band)", "1 – 4.5", "Chất lượng tiếng nói cảm nhận (ITU-T P.862.2). Con số chính của lĩnh vực."],
+             ["STOI / ESTOI", "0 – 1", "Mức độ dễ hiểu (intelligibility) của tiếng nói."],
+             ["CSIG", "1 – 5", "Điểm ý kiến dự đoán cho *méo tiếng nói*."],
+             ["CBAK", "1 – 5", "Điểm ý kiến dự đoán cho *mức khó chịu của nhiễu nền*."],
+             ["COVL", "1 – 5", "Chất lượng *tổng thể* dự đoán."],
+             ["SSNR, SI-SDR", "dB", "Độ trung thực tín hiệu: dạng sóng gần với tín hiệu sạch đến đâu."]],
+            [3.4, 2.4, 10.6], caption="Các metric khách quan dùng trong báo cáo (tất cả đều càng cao càng tốt).",
             center_cols=(1,))
 
     # ------------------------------------------------------------ 3 survey
-    R.h1("3  Literature survey")
-    R.h2("3.1  The big picture")
-    R.p(f"Methods published between 2021 and 2025 fall into three families (Figure {R.fig_no + 1}). They trade off accuracy on "
-        "standard metrics, robustness to new conditions, and computational cost.")
-    R.figure("fig_taxonomy.png", "Three families of modern speech enhancement, with representative models and "
-             "their main strengths (+) and weaknesses (−).")
-    R.figure("fig_timeline.png", "Timeline of the papers discussed in this chapter.", width_cm=15.5)
-    R.p("Five trends stand out:")
-    R.bullets(["**Explicit phase modelling:** predicting phase directly, with losses that understand the 2π wrap-around.",
-               "**Metric-driven training:** a discriminator network learns to predict PESQ, and the enhancer is "
-               "trained to maximise it.",
-               "**Time-and-frequency sequence models:** Conformers that look along both axes of the spectrogram, now "
-               "being replaced by faster state-space models (Mamba).",
-               "**Generative robustness:** diffusion and language models that generalise better to unseen noise.",
-               "**Efficiency:** real-time, low-complexity designs for phones and hearing aids (e.g. DeepFilterNet)."])
+    R.h1("3  Khảo sát tài liệu")
+    R.h2("3.1  Bức tranh tổng thể")
+    R.p(f"Các phương pháp công bố trong giai đoạn 2021–2025 chia thành ba nhóm (Hình {R.fig_no + 1}). Chúng đánh đổi giữa "
+        "độ chính xác trên các metric chuẩn, độ bền vững trong điều kiện mới, và chi phí tính toán.")
+    R.figure("fig_taxonomy.png", "Ba nhóm phương pháp tăng cường tiếng nói hiện đại, với các mô hình tiêu biểu cùng "
+             "ưu điểm (+) và nhược điểm (−) chính.")
+    R.figure("fig_timeline.png", "Dòng thời gian các bài báo được thảo luận trong chương này.", width_cm=15.5)
+    R.p("Năm xu hướng nổi bật:")
+    R.bullets(["**Mô hình hóa pha tường minh:** dự đoán trực tiếp pha, với các loss hiểu được hiện tượng quấn 2π.",
+               "**Huấn luyện theo metric:** một mạng discriminator học dự đoán PESQ, và mạng tăng cường được huấn luyện "
+               "để tối đa hóa giá trị đó.",
+               "**Mô hình chuỗi theo cả thời gian và tần số:** Conformer nhìn theo cả hai trục của spectrogram, nay đang "
+               "được thay bằng các mô hình state-space nhanh hơn (Mamba).",
+               "**Độ bền vững nhờ mô hình sinh:** diffusion và language model tổng quát hóa tốt hơn với nhiễu chưa gặp.",
+               "**Hiệu quả tính toán:** thiết kế thời gian thực, độ phức tạp thấp cho điện thoại và máy trợ thính "
+               "(ví dụ DeepFilterNet)."])
 
     papers = [
         ("3.2  CMGAN: Conformer-based Metric GAN",
          "S. Abdulatif, R. Cao, B. Yang. IEEE/ACM Transactions on Audio, Speech, and Language Processing (TASLP), "
-         "vol. 32, 2024. Q1 journal; short version at Interspeech 2022.",
-         "A dense convolutional encoder is followed by four *two-stage Conformer* blocks, which model context first "
-         "along time and then along frequency. Two decoders follow: one predicts a magnitude mask, the other refines "
-         "the real and imaginary parts. A *metric discriminator* learns to predict PESQ, and the generator is trained "
-         "to push that prediction up.",
-         "PESQ 3.41, CSIG 4.63, CBAK 3.94, COVL 4.12, STOI 0.96, with only 1.83 M parameters.",
-         ["Excellent quality for a small model.", "Time-frequency Conformers capture long-range context.",
-          "Thoroughly evaluated on denoising, dereverberation and super-resolution."],
-         ["Phase is only refined indirectly through the complex branch.",
-          "Attention cost grows quadratically with utterance length; not causal (cannot run in real time as is).",
-          "Computing PESQ for the discriminator slows training."]),
-        ("3.3  MP-SENet: parallel magnitude and phase denoising",
-         "Y.-X. Lu, Y. Ai, Z.-H. Ling. Interspeech 2023 (CORE A). An extended version appeared in Neural Networks (2025).",
-         "It keeps a CMGAN-like backbone but uses **two parallel decoders**: one for the magnitude (a mask) and one "
-         "that estimates the **phase explicitly**. The phase decoder predicts two numbers per bin and takes their "
-         "angle with atan2, which always gives a valid phase. Special *anti-wrapping* losses compare phases correctly "
-         "across the 2π boundary.",
-         "PESQ 3.50, CSIG 4.73, CBAK 3.95, COVL 4.22, STOI 0.96, with about 2.05 M parameters.",
-         ["Best results among models of this size at publication time.",
-          "First model to estimate phase directly and reliably.", "Official code and pretrained checkpoints are public."],
-         ["Six loss terms with hand-picked weights; unclear which ones matter (this is what our ablation tests).",
-          "Not causal; trained only on VoiceBank-DEMAND noise types.", "The metric GAN may over-fit to PESQ."]),
-        ("3.4  SGMSE+: score-based diffusion for enhancement",
-         "J. Richter, S. Welker, J.-M. Lemercier, B. Lay, T. Gerkmann. IEEE/ACM TASLP, vol. 31, 2023. Q1 journal.",
-         "A *diffusion model* works in the complex STFT domain. Training defines a process that gradually moves "
-         "clean speech towards the noisy mixture plus Gaussian noise. At test time a neural network (NCSN++) runs "
-         "this process backwards, step by step, conditioned on the noisy input.",
-         "PESQ 2.93, ESTOI 0.87, SI-SDR 17.3 dB on VoiceBank-DEMAND; notably better than discriminative models when "
-         "tested on data from a different corpus.",
-         ["Natural-sounding output and strong generalisation.", "The same framework also removes reverberation."],
-         ["Slow: about 60 network evaluations per utterance with a ~65 M-parameter network.",
-          "Can 'hallucinate' breathing or phoneme-like sounds at low SNR.", "Lower PESQ than the best discriminative models."]),
-        ("3.5  StoRM: stochastic regeneration",
-         "J.-M. Lemercier, J. Richter, S. Welker, T. Gerkmann. IEEE/ACM TASLP, vol. 31, 2023. Q1 journal.",
-         "Combines both worlds: a predictive (discriminative) network first produces an estimate, then a diffusion "
-         "model *regenerates* the fine details starting from that estimate rather than from pure noise.",
-         "Similar quality to SGMSE+ with far fewer sampling steps and fewer generative artefacts.",
-         ["Removes the vocalising/breathing artefacts of pure diffusion.", "Much faster sampling than SGMSE+."],
-         ["Two networks to train and run.", "Still slower than a single discriminative model."]),
-        ("3.6  DOSE: diffusion dropout with adaptive prior",
+         "vol. 32, 2024. Tạp chí Q1; phiên bản ngắn tại Interspeech 2022.",
+         "Một encoder tích chập dense được nối với bốn khối *two-stage Conformer*, mô hình hóa ngữ cảnh lần lượt theo "
+         "thời gian rồi theo tần số. Tiếp theo là hai decoder: một decoder dự đoán mask biên độ, decoder còn lại tinh "
+         "chỉnh phần thực và phần ảo. Một *metric discriminator* học dự đoán PESQ, và generator được huấn luyện để đẩy "
+         "giá trị dự đoán đó lên.",
+         "PESQ 3.41, CSIG 4.63, CBAK 3.94, COVL 4.12, STOI 0.96, chỉ với 1.83 M tham số.",
+         ["Chất lượng rất tốt so với kích thước mô hình nhỏ.", "Conformer thời gian–tần số nắm bắt ngữ cảnh xa.",
+          "Được đánh giá kỹ trên khử nhiễu, khử vang và siêu phân giải."],
+         ["Pha chỉ được tinh chỉnh gián tiếp qua nhánh phức.",
+          "Chi phí attention tăng bậc hai theo độ dài câu; không causal (chưa chạy thời gian thực được).",
+          "Tính PESQ cho discriminator làm chậm quá trình huấn luyện."]),
+        ("3.3  MP-SENet: khử nhiễu song song biên độ và pha",
+         "Y.-X. Lu, Y. Ai, Z.-H. Ling. Interspeech 2023 (CORE A). Bản mở rộng đăng trên Neural Networks (2025).",
+         "Giữ backbone giống CMGAN nhưng dùng **hai decoder song song**: một cho biên độ (dạng mask) và một **ước lượng "
+         "pha tường minh**. Decoder pha dự đoán hai số cho mỗi bin rồi lấy góc bằng atan2, nên luôn cho ra một pha hợp "
+         "lệ. Các loss *anti-wrapping* đặc biệt so sánh pha chính xác qua ranh giới 2π.",
+         "PESQ 3.50, CSIG 4.73, CBAK 3.95, COVL 4.22, STOI 0.96, với khoảng 2.05 M tham số.",
+         ["Kết quả tốt nhất trong các mô hình cùng kích thước tại thời điểm công bố.",
+          "Mô hình đầu tiên ước lượng pha trực tiếp và ổn định.", "Mã nguồn và checkpoint chính thức được công khai."],
+         ["Sáu thành phần loss với trọng số chọn thủ công; không rõ thành phần nào quan trọng (đây là điều ablation "
+          "của chúng tôi kiểm tra).",
+          "Không causal; chỉ huấn luyện trên các loại nhiễu của VoiceBank-DEMAND.", "Metric GAN có thể overfit theo PESQ."]),
+        ("3.4  SGMSE+: diffusion dựa trên score cho tăng cường tiếng nói",
+         "J. Richter, S. Welker, J.-M. Lemercier, B. Lay, T. Gerkmann. IEEE/ACM TASLP, vol. 31, 2023. Tạp chí Q1.",
+         "Một *mô hình diffusion* làm việc trong miền STFT phức. Khi huấn luyện, mô hình định nghĩa một quá trình dần dần "
+         "đưa tiếng nói sạch về phía hỗn hợp nhiễu cộng nhiễu Gauss. Khi test, một mạng nơ-ron (NCSN++) chạy ngược quá "
+         "trình này từng bước, có điều kiện theo đầu vào nhiễu.",
+         "PESQ 2.93, ESTOI 0.87, SI-SDR 17.3 dB trên VoiceBank-DEMAND; tốt hơn rõ rệt so với mô hình discriminative khi "
+         "test trên dữ liệu từ một kho khác.",
+         ["Đầu ra tự nhiên và tổng quát hóa mạnh.", "Cùng framework cũng khử được tiếng vang."],
+         ["Chậm: khoảng 60 lần chạy mạng cho mỗi câu với mạng khoảng 65 M tham số.",
+          "Có thể “ảo giác” ra tiếng thở hoặc âm giống âm vị ở SNR thấp.",
+          "PESQ thấp hơn các mô hình discriminative tốt nhất."]),
+        ("3.5  StoRM: tái sinh ngẫu nhiên (stochastic regeneration)",
+         "J.-M. Lemercier, J. Richter, S. Welker, T. Gerkmann. IEEE/ACM TASLP, vol. 31, 2023. Tạp chí Q1.",
+         "Kết hợp hai hướng: một mạng dự đoán (discriminative) tạo ước lượng ban đầu, sau đó một mô hình diffusion "
+         "*tái sinh* các chi tiết nhỏ bắt đầu từ ước lượng đó thay vì từ nhiễu thuần.",
+         "Chất lượng tương đương SGMSE+ với ít bước lấy mẫu hơn nhiều và ít lỗi sinh hơn.",
+         ["Loại bỏ lỗi phát âm/tiếng thở giả của diffusion thuần.", "Lấy mẫu nhanh hơn nhiều so với SGMSE+."],
+         ["Phải huấn luyện và chạy hai mạng.", "Vẫn chậm hơn một mô hình discriminative đơn lẻ."]),
+        ("3.6  DOSE: diffusion dropout với prior thích nghi",
          "W. Tai, Y. Lei, F. Zhou, G. Trajcevski, T. Zhong. NeurIPS 2023 (CORE A*).",
-         "Conditional diffusion models sometimes ignore the noisy input. DOSE fixes this with *diffusion dropout* "
-         "during training, which forces the model to rely on the condition, and an *adaptive prior* that starts "
-         "sampling from a noisy estimate instead of random noise. Only two sampling steps are needed.",
-         "Efficient diffusion-based enhancement with good generalisation and a theoretical analysis.",
-         ["Very few sampling steps.", "Better use of the conditioning signal."],
-         ["PESQ still clearly below discriminative state of the art.", "More complex to tune."]),
-        ("3.7  GenSE: enhancement as language modelling",
+         "Mô hình diffusion có điều kiện đôi khi bỏ qua đầu vào nhiễu. DOSE khắc phục bằng *diffusion dropout* khi huấn "
+         "luyện, buộc mô hình dựa vào điều kiện, và một *prior thích nghi* bắt đầu lấy mẫu từ một ước lượng nhiễu thay "
+         "vì nhiễu ngẫu nhiên. Chỉ cần hai bước lấy mẫu.",
+         "Tăng cường dựa trên diffusion hiệu quả, tổng quát hóa tốt và có phân tích lý thuyết.",
+         ["Rất ít bước lấy mẫu.", "Tận dụng tín hiệu điều kiện tốt hơn."],
+         ["PESQ vẫn thấp hơn rõ so với state of the art discriminative.", "Khó tinh chỉnh hơn."]),
+        ("3.7  GenSE: tăng cường tiếng nói như bài toán language modelling",
          "J. Yao, H. Liu, C. Chen, Y. Hu, E. S. Chng, L. Xie. ICLR 2025 (CORE A*).",
-         "Speech is converted into discrete tokens: *semantic* tokens from a self-supervised model and *acoustic* "
-         "tokens from a neural codec. A language model first maps noisy semantic tokens to clean ones, then generates "
-         "acoustic tokens, using prompting to keep the speaker's voice.",
-         "Strong naturalness (DNSMOS) and speaker similarity on real-world recordings.",
-         ["Robust to many kinds of distortion.", "One model for several tasks."],
-         ["Very large and slow (autoregressive decoding).",
-          "Can change words or the speaker's voice; intrusive metrics like PESQ penalise it."]),
+         "Tiếng nói được chuyển thành token rời rạc: token *ngữ nghĩa* từ một mô hình self-supervised và token *âm học* "
+         "từ một neural codec. Một language model trước hết ánh xạ token ngữ nghĩa nhiễu sang token sạch, rồi sinh token "
+         "âm học, dùng prompting để giữ giọng của người nói.",
+         "Độ tự nhiên (DNSMOS) và độ giống người nói cao trên bản ghi thực tế.",
+         ["Bền vững với nhiều loại méo.", "Một mô hình cho nhiều tác vụ."],
+         ["Rất lớn và chậm (giải mã autoregressive).",
+          "Có thể làm đổi từ hoặc đổi giọng; các metric intrusive như PESQ phạt điều này."]),
     ]
     for title, venue, method, result, pros, cons in papers:
         R.h2(title)
         R.p("*" + venue.replace("*", "\\*") + "*", color=MUTED)
-        R.p(f"**Idea.** {method}")
-        R.p(f"**Reported results.** {result}")
-        R.table([["Strengths", "Weaknesses"]] + [[pros[i] if i < len(pros) else "", cons[i] if i < len(cons) else ""]
-                                                 for i in range(max(len(pros), len(cons)))],
+        R.p(f"**Ý tưởng.** {method}")
+        R.p(f"**Kết quả công bố.** {result}")
+        R.table([["Ưu điểm", "Nhược điểm"]] + [[pros[i] if i < len(pros) else "", cons[i] if i < len(cons) else ""]
+                                                for i in range(max(len(pros), len(cons)))],
                 [8.2, 8.2], size=10, center_from=9)
 
-    R.h2("3.8  Other related work")
-    R.bullets(["**MetricGAN+** (Fu et al., Interspeech 2021): a BLSTM mask estimator trained with a learned PESQ "
-               "discriminator (PESQ 3.15). This is where the metric discriminator in CMGAN and MP-SENet comes from.",
-               "**DeepFilterNet** (Schröter et al., ICASSP 2022, with v2/v3 follow-ups): real-time full-band (48 kHz) "
-               "enhancement using band gains plus *deep filtering*; very low complexity.",
-               "**SEMamba** (Chao et al., IEEE SLT 2024): replaces MP-SENet's Conformers with Mamba blocks, whose cost "
-               "grows linearly with length. Reports PESQ 3.55, or 3.69 with perceptual contrast stretching (PCS). "
-               "PCS motivates our second improvement."])
-    R.h2("3.9  Comparison")
-    R.figure("fig_reported_pesq.png", "PESQ reported by the authors on the VoiceBank-DEMAND test set. "
-             "Discriminative models lead on this intrusive metric; diffusion models trade some PESQ for robustness.",
+    R.h2("3.8  Các công trình liên quan khác")
+    R.bullets(["**MetricGAN+** (Fu et al., Interspeech 2021): bộ ước lượng mask BLSTM được huấn luyện cùng một "
+               "discriminator học PESQ (PESQ 3.15). Đây là nguồn gốc của metric discriminator trong CMGAN và MP-SENet.",
+               "**DeepFilterNet** (Schröter et al., ICASSP 2022, cùng các bản v2/v3): tăng cường full-band (48 kHz) "
+               "thời gian thực bằng band gain kết hợp *deep filtering*; độ phức tạp rất thấp.",
+               "**SEMamba** (Chao et al., IEEE SLT 2024): thay các Conformer của MP-SENet bằng khối Mamba, có chi phí "
+               "tăng tuyến tính theo độ dài. Báo cáo PESQ 3.55, hoặc 3.69 khi dùng perceptual contrast stretching (PCS). "
+               "PCS là động lực cho cải tiến thứ hai của chúng tôi."])
+    R.h2("3.9  So sánh")
+    R.figure("fig_reported_pesq.png", "PESQ do các tác giả công bố trên tập test VoiceBank-DEMAND. Mô hình "
+             "discriminative dẫn đầu trên metric intrusive này; mô hình diffusion đánh đổi một phần PESQ lấy độ bền vững.",
              width_cm=14)
-    R.table([["Model", "Venue", "Family", "PESQ", "CSIG", "CBAK", "COVL", "Params"],
-             ["Noisy input", "–", "–", "1.97", "3.35", "2.44", "2.63", "–"],
+    R.table([["Mô hình", "Nơi công bố", "Nhóm", "PESQ", "CSIG", "CBAK", "COVL", "Tham số"],
+             ["Đầu vào nhiễu", "–", "–", "1.97", "3.35", "2.44", "2.63", "–"],
              ["MetricGAN+", "Interspeech'21", "Discriminative", "3.15", "4.14", "3.16", "3.64", "–"],
              ["SGMSE+", "TASLP'23", "Diffusion", "2.93", "–", "–", "–", "~65 M"],
              ["CMGAN", "TASLP'24", "Discriminative", "3.41", "4.63", "3.94", "4.12", "1.83 M"],
              ["MP-SENet", "Interspeech'23", "Discriminative", "3.50", "4.73", "3.95", "4.22", "2.05 M"],
              ["SEMamba (+PCS)", "SLT'24", "Discriminative", "3.55 (3.69)", "–", "–", "–", "~2 M"]],
             [2.9, 2.6, 2.6, 2.0, 1.4, 1.4, 1.4, 1.6], highlight=(5,),
-            caption="Reported results on VoiceBank-DEMAND (\"–\" = not reported in a comparable setting).", center_from=3)
-    R.callout("Why we chose MP-SENet", [
-        "It gives the best accuracy per parameter among models with public code, it combines most current trends "
-        "(TF-Conformers, explicit phase, metric GAN, multi-domain losses), and later models such as SEMamba build on "
-        "it. Understanding which of its parts matter is therefore useful beyond this one model."])
-    R.h2("3.10  The situation in Vietnam")
-    R.p("We found few dedicated speech-enhancement papers by Vietnamese groups in Q1/Q2 journals or A/A\\* conferences. "
-        "Noise is mostly handled *inside* other tasks:")
-    R.bullets(["**Robust ASR:** for example, a 2025 study in *Tạp chí Khoa học* adds 2,000 hours of real "
-               "Vietnamese noise to a 200-hour training corpus at six SNR levels and reduces word error rate on noisy "
-               "test sets.",
-               "**TTS data cleaning:** VLSP 2020/2021 text-to-speech systems denoise found or noisy recordings "
-               "before training.",
-               "**Open gap:** there is no public Vietnamese noisy/clean benchmark comparable to VoiceBank-DEMAND. "
-               "Because Vietnamese is tonal, errors in pitch and phase may hurt intelligibility more than in English."])
+            caption="Kết quả công bố trên VoiceBank-DEMAND (\"–\" = không báo cáo trong thiết lập tương đương).",
+            center_from=3)
+    R.callout("Vì sao chọn MP-SENet", [
+        "MP-SENet cho độ chính xác trên mỗi tham số tốt nhất trong các mô hình có mã nguồn công khai, kết hợp phần lớn "
+        "xu hướng hiện nay (TF-Conformer, pha tường minh, metric GAN, loss đa miền), và các mô hình sau như SEMamba được "
+        "xây dựng dựa trên nó. Vì vậy hiểu được thành phần nào của nó quan trọng có ích vượt ra ngoài riêng mô hình này."])
+    R.h2("3.10  Tình hình tại Việt Nam")
+    R.p("Chúng tôi tìm thấy rất ít bài báo chuyên về tăng cường tiếng nói của các nhóm Việt Nam trên tạp chí Q1/Q2 hoặc "
+        "hội nghị A/A\\*. Nhiễu chủ yếu được xử lý *bên trong* các bài toán khác:")
+    R.bullets(["**ASR bền vững:** ví dụ, một nghiên cứu năm 2025 trên *Tạp chí Khoa học* bổ sung 2,000 giờ nhiễu thực "
+               "tế của Việt Nam vào kho huấn luyện 200 giờ ở sáu mức SNR và giảm tỉ lệ lỗi từ (WER) trên các tập test "
+               "nhiễu.",
+               "**Làm sạch dữ liệu TTS:** các hệ thống text-to-speech tại VLSP 2020/2021 khử nhiễu các bản ghi thu thập "
+               "hoặc bị nhiễu trước khi huấn luyện.",
+               "**Khoảng trống còn mở:** chưa có benchmark nhiễu/sạch tiếng Việt công khai tương đương VoiceBank-DEMAND. "
+               "Vì tiếng Việt là ngôn ngữ có thanh điệu, sai lệch về cao độ và pha có thể ảnh hưởng đến độ dễ hiểu nhiều "
+               "hơn so với tiếng Anh."])
 
     # ------------------------------------------------------------ 4 demo
     R.h1("4  Demo")
-    R.p("The demo has three parts. All outputs are scored with the same metric code, so the comparison is fair.")
-    R.bullets(["**Official model:** `scripts/demo_official_mpsenet.sh` downloads the authors' code and pretrained "
-               "VoiceBank-DEMAND checkpoint, enhances the 824 test files, and scores them with our metrics.",
-               "**Our model:** `python -m se.enhance` cleans any wav file or folder with one of our checkpoints.",
-               "**Listening comparison:** `notebooks/demo.ipynb` enhances a few test utterances with the baseline and "
-               "the ablated checkpoints, plays them, and shows spectrograms and metrics per utterance. Some effects, "
-               "such as missing phase estimation, are easier to hear than to read from PESQ."])
-    R.code(["bash scripts/demo_official_mpsenet.sh data/voicebank_demand_16k",
-            "python -m se.enhance --ckpt runs/a00_baseline/checkpoints/best.pt --input noisy.wav --output out/",
-            "jupyter notebook notebooks/demo.ipynb"])
+    R.p("Demo gồm ba phần. Mọi đầu ra đều được chấm bằng cùng một đoạn mã metric nên phép so sánh là công bằng.")
+    R.bullets(["**Mô hình của chúng tôi:** `python -m se.enhance` làm sạch một file wav hoặc cả thư mục bằng một "
+               "checkpoint đã huấn luyện (ví dụ baseline a00).",
+               "**So sánh bằng tai nghe:** `notebooks/demo.ipynb` tăng cường một vài câu test bằng baseline và các "
+               "checkpoint ablation, phát lại âm thanh, hiển thị spectrogram và metric cho từng câu. Một số hiệu ứng, như "
+               "việc thiếu ước lượng pha, nghe thấy rõ hơn là đọc từ PESQ.",
+               "**Mô hình chính thức (tham chiếu):** `scripts/demo_official_mpsenet.sh` tải mã nguồn và checkpoint "
+               "VoiceBank-DEMAND đã huấn luyện sẵn của tác giả, tăng cường 824 file test và chấm điểm bằng metric của "
+               "chúng tôi."])
+    R.code(["python -m se.enhance --ckpt runs/a00_baseline/checkpoints/best.pt --input noisy.wav --output out/",
+            "jupyter notebook notebooks/demo.ipynb",
+            "bash scripts/demo_official_mpsenet.sh data/voicebank_demand_16k"])
 
     # ------------------------------------------------------------ 5 method
-    R.h1("5  MP-SENet in depth")
-    R.h2("5.1  Architecture overview")
-    R.p(f"Figure {R.fig_no + 1} shows the whole model. Our re-implementation has **2,047,000 parameters**, matching the 2.05 M "
-        "reported in the paper.")
-    R.figure("fig_architecture.png", "MP-SENet. A shared encoder and four two-stage Conformer blocks feed two parallel "
-             "decoders: one for magnitude, one for phase. The iSTFT combines them into the enhanced waveform.")
+    R.h1("5  Phân tích chuyên sâu MP-SENet")
+    R.h2("5.1  Tổng quan kiến trúc")
+    R.p(f"Hình {R.fig_no + 1} cho thấy toàn bộ mô hình. Bản cài đặt lại của chúng tôi có **2,047,000 tham số**, khớp với "
+        "con số 2.05 M trong bài báo.")
+    R.figure("fig_architecture.png", "MP-SENet. Một encoder dùng chung và bốn khối two-stage Conformer cấp dữ liệu cho "
+             "hai decoder song song: một cho biên độ, một cho pha. iSTFT kết hợp chúng thành dạng sóng đã tăng cường.")
     R.bullets([
-        "**Input.** The noisy STFT is split into a *compressed magnitude* |Y|^0.3 and a phase ∠Y, stacked as two "
-        "channels (201 frequency bins × T frames).",
-        "**Dense encoder.** Convolutions with dense connections and growing dilation along time see a wide context "
-        "cheaply. A strided convolution halves the frequency axis (201 → 100) to save computation.",
-        f"**Four TS-Conformer blocks** (Figure {R.fig_no + 1}) model long-range dependencies along time and along frequency.",
-        "**Magnitude decoder.** Upsamples back to 201 bins and outputs a *mask*. The enhanced magnitude is mask × |Y|.",
-        "**Phase decoder.** Outputs two values (r, i) per bin; the phase is atan2(i, r). This sidesteps the "
-        "problem that phase wraps around at ±π."])
-    R.figure("fig_tfblock.png", "A two-stage (TS) Conformer block. The same feature map is processed as sequences "
-             "over time, then as sequences over frequency.", width_cm=15)
-    R.h2("5.2  Three small design choices with big effects")
-    R.figure("fig_compression_mask.png", "Left: power-law compression (c = 0.3) gives quiet but important bins more "
-             "weight. Right: a learnable sigmoid with β = 2 lets the mask go above 1, so it can also restore "
-             "attenuated speech.")
-    R.bullets(["**Magnitude compression (c = 0.3).** Speech spectra span a huge range of loudness. Raising them to "
-               "the power 0.3 lifts the quiet bins, so the network and the loss do not ignore them. Removing it "
-               "(a08) is left for future work.",
-               "**Learnable sigmoid mask (β = 2).** A normal sigmoid can only reduce energy. With β = 2 and a "
-               "learnable slope for each frequency, the mask can also amplify (a plain sigmoid, a10, is future work).",
-               "**Phase via atan2.** Predicting (r, i) and taking the angle always gives a valid phase. Ablation a03 "
-               "replaces it with the noisy phase."])
-    R.h2("5.3  Training objectives")
-    R.p(f"The model is trained with six losses at once (Figure {R.fig_no + 1}).")
-    R.figure("fig_losses.png", "The six objectives and their weights in the total loss.", width_cm=13.5)
-    R.bullets(["**Magnitude MSE:** distance between the compressed clean and enhanced magnitudes.",
-               "**Phase losses:** compare instantaneous phase (IP), its difference along frequency (group delay, GD) "
-               "and its difference along time (instantaneous angular frequency, IAF), all with an *anti-wrapping* "
-               f"function (Figure {R.fig_no + 1}).",
-               "**Complex MSE:** distance between the compressed real and imaginary parts.",
-               "**Time L1:** distance between the waveforms.",
-               "**STFT consistency:** re-analysing the output waveform should give back the predicted spectrogram.",
-               "**Metric GAN:** a discriminator learns to predict normalised PESQ; the generator is rewarded when the "
-               "discriminator thinks its output is perfect."])
-    R.figure("fig_phase_wrapping.png", "Why phase needs a special loss. Phase is only defined up to multiples of 2π "
-             "(right). A naive loss punishes an error of 2π heavily, although it is no error at all (left, grey); the "
-             "anti-wrapping function treats it as zero (left, red).")
-    R.h2("5.4  Training setup")
-    R.table([["Setting", "Value"],
-             ["Sampling rate / STFT", "16 kHz; FFT 400, hop 100, Hann window 400 (25 ms / 6.25 ms)"],
-             ["Training segments", "2 s random crops, batch size 4"],
-             ["Optimiser", "AdamW, learning rate 5·10⁻⁴, β = (0.8, 0.99); learning rate × 0.99 every epoch"],
-             ["Training length", "5 epochs for every run (compute budget); see Section 6.2"],
-             ["Model size", "64 channels, 4 TS-Conformer blocks, 4 attention heads, conv kernel 31"],
-             ["Model selection", "best PESQ on the held-out validation speakers"],
-             ["Input normalisation", "each noisy utterance is scaled to unit RMS; the output is scaled back"]],
-            [4.6, 11.8], caption="Training configuration (`configs/base.yaml`).", center_from=9)
+        "**Đầu vào.** STFT nhiễu được tách thành *biên độ nén* |Y|^0.3 và pha ∠Y, xếp thành hai kênh "
+        "(201 bin tần số × T khung).",
+        "**Dense encoder.** Các lớp tích chập với kết nối dense và độ giãn (dilation) tăng dần theo thời gian nhìn được "
+        "ngữ cảnh rộng với chi phí thấp. Một lớp tích chập có bước (stride) chia đôi trục tần số (201 → 100) để tiết kiệm "
+        "tính toán.",
+        f"**Bốn khối TS-Conformer** (Hình {R.fig_no + 1}) mô hình hóa phụ thuộc xa theo thời gian và theo tần số.",
+        "**Decoder biên độ.** Upsample trở lại 201 bin và xuất ra một *mask*. Biên độ tăng cường là mask × |Y|.",
+        "**Decoder pha.** Xuất hai giá trị (r, i) cho mỗi bin; pha là atan2(i, r). Cách này tránh được vấn đề pha bị "
+        "quấn tại ±π."])
+    R.figure("fig_tfblock.png", "Một khối two-stage (TS) Conformer. Cùng một feature map được xử lý như các chuỗi theo "
+             "thời gian, rồi như các chuỗi theo tần số.", width_cm=15)
+    R.h2("5.2  Ba lựa chọn thiết kế nhỏ nhưng ảnh hưởng lớn")
+    R.figure("fig_compression_mask.png", "Trái: nén lũy thừa (c = 0.3) cho các bin nhỏ nhưng quan trọng nhiều trọng số "
+             "hơn. Phải: sigmoid học được với β = 2 cho phép mask vượt quá 1, nên có thể khôi phục tiếng nói bị suy giảm.")
+    R.bullets(["**Nén biên độ (c = 0.3).** Phổ tiếng nói trải trên một dải âm lượng rất rộng. Nâng lên lũy thừa 0.3 làm "
+               "các bin nhỏ nổi lên, để mạng và loss không bỏ qua chúng. Việc bỏ nén (a08) được để lại cho hướng phát "
+               "triển.",
+               "**Mask sigmoid học được (β = 2).** Sigmoid thông thường chỉ giảm được năng lượng. Với β = 2 và độ dốc "
+               "học được cho từng tần số, mask còn có thể khuếch đại (sigmoid thường, a10, là hướng phát triển).",
+               "**Pha qua atan2.** Dự đoán (r, i) rồi lấy góc luôn cho một pha hợp lệ. Ablation a03 thay thế phần này "
+               "bằng pha nhiễu."])
+    R.h2("5.3  Các hàm mục tiêu huấn luyện")
+    R.p(f"Mô hình được huấn luyện đồng thời với sáu loss (Hình {R.fig_no + 1}).")
+    R.figure("fig_losses.png", "Sáu hàm mục tiêu và trọng số của chúng trong loss tổng.", width_cm=13.5)
+    R.bullets(["**Magnitude MSE:** khoảng cách giữa biên độ nén của tín hiệu sạch và tín hiệu tăng cường.",
+               "**Loss pha:** so sánh pha tức thời (instantaneous phase, IP), sai phân của nó theo tần số (group delay, "
+               "GD) và theo thời gian (instantaneous angular frequency, IAF), tất cả qua một hàm *anti-wrapping* "
+               f"(Hình {R.fig_no + 1}).",
+               "**Complex MSE:** khoảng cách giữa phần thực và phần ảo đã nén.",
+               "**Time L1:** khoảng cách giữa hai dạng sóng.",
+               "**STFT consistency:** phân tích lại dạng sóng đầu ra phải cho lại đúng spectrogram đã dự đoán.",
+               "**Metric GAN:** một discriminator học dự đoán PESQ chuẩn hóa; generator được thưởng khi discriminator "
+               "cho rằng đầu ra của nó là hoàn hảo."])
+    R.figure("fig_phase_wrapping.png", "Vì sao pha cần một loss đặc biệt. Pha chỉ xác định sai khác bội số của 2π "
+             "(phải). Một loss ngây thơ phạt rất nặng sai số 2π, dù đó hoàn toàn không phải sai số (trái, màu xám); hàm "
+             "anti-wrapping coi nó bằng không (trái, màu đỏ).")
+    R.h2("5.4  Thiết lập huấn luyện")
+    R.table([["Thiết lập", "Giá trị"],
+             ["Tần số lấy mẫu / STFT", "16 kHz; FFT 400, hop 100, cửa sổ Hann 400 (25 ms / 6.25 ms)"],
+             ["Đoạn huấn luyện", "cắt ngẫu nhiên 2 s, batch size 4"],
+             ["Optimizer", "AdamW, learning rate 5·10⁻⁴, β = (0.8, 0.99); learning rate × 0.99 sau mỗi epoch"],
+             ["Thời lượng huấn luyện", "5 epoch cho mọi lần chạy (giới hạn tài nguyên); xem Mục 6.2"],
+             ["Kích thước mô hình", "64 kênh, 4 khối TS-Conformer, 4 attention head, kernel tích chập 31"],
+             ["Chọn mô hình", "PESQ tốt nhất trên tập người nói validation được tách riêng"],
+             ["Chuẩn hóa đầu vào", "mỗi câu nhiễu được chuẩn hóa về RMS đơn vị; đầu ra được scale ngược lại"]],
+            [4.6, 11.8], caption="Cấu hình huấn luyện (`configs/base.yaml`).", center_from=9)
 
     # ------------------------------------------------------------ 6 ablation
-    R.h1("6  Ablation study")
-    R.h2("6.1  Idea")
-    R.p("An **ablation study** removes or replaces one component at a time and measures how much worse (or better) "
-        "the model gets. The bigger the drop, the more that component matters. Every experiment uses the same data, "
-        "seed, number of epochs and model-selection rule; only one setting changes.")
-    R.p("With a limited GPU budget we chose the **four ablations that test MP-SENet's main ideas**: the metric GAN "
-        "(training signal), the phase losses and the phase decoder (the paper's core claim), and the Conformer "
-        "backbone (architecture). The remaining six are implemented and listed in Section 6.6 as future work.")
-    R.h2("6.2  Protocol")
-    R.p("Every run trains for **5 epochs**, much shorter than in the paper, so absolute scores are below the "
-        "published PESQ of 3.50. Because all runs share the same budget, seed and selection rule, the *differences* "
-        "between runs are still a fair comparison; small differences should be read with care (Section 6.5).")
-    R.figure("fig_split.png", "Data split. Two training speakers are held out for validation, so the test set is used "
-             "only once, for the final numbers. (The original code selects models on the test set, which slightly "
-             "inflates results.)", width_cm=14)
-    R.figure("fig_pipeline.png", "Experiment pipeline. Each configuration inherits `base.yaml` and changes one key; "
-             "the 7 runs are submitted as one SLURM job array; results are collected into tables and figures.",
-             width_cm=15.5)
-    R.h2("6.3  Experiments")
-    R.table([["ID", "What changes", "Question it answers"]] + [list(a) for a in ABLATIONS],
-            [1.2, 6.6, 8.6], caption="The four ablations we ran. a00 is the full baseline.", size=10, center_from=9)
-    R.h2("6.4  Results")
+    R.h1("6  Nghiên cứu ablation")
+    R.h2("6.1  Ý tưởng")
+    R.p("**Nghiên cứu ablation** bỏ hoặc thay một thành phần mỗi lần và đo xem mô hình kém đi (hoặc tốt lên) bao nhiêu. "
+        "Mức giảm càng lớn thì thành phần đó càng quan trọng. Mọi thí nghiệm dùng cùng dữ liệu, seed, số epoch và quy tắc "
+        "chọn mô hình; chỉ một thiết lập thay đổi.")
+    R.p("Do giới hạn GPU, chúng tôi chọn **bốn ablation kiểm tra các ý tưởng chính của MP-SENet**: metric GAN (tín hiệu "
+        "huấn luyện), các loss pha và decoder pha (luận điểm cốt lõi của bài báo), và backbone Conformer (kiến trúc). Sáu "
+        "ablation còn lại đã được cài đặt và liệt kê ở Mục 6.6 như hướng phát triển.")
+    R.h2("6.2  Quy trình")
+    R.p("Mỗi lần chạy huấn luyện **5 epoch**, ngắn hơn nhiều so với bài báo, nên điểm tuyệt đối thấp hơn PESQ 3.50 đã "
+        "công bố. Vì mọi lần chạy có cùng ngân sách, seed và quy tắc chọn mô hình, *chênh lệch* giữa các lần chạy vẫn là "
+        "một phép so sánh công bằng; các chênh lệch nhỏ cần được đọc thận trọng (Mục 6.5).")
+    R.figure("fig_split.png", "Chia dữ liệu. Hai người nói trong tập huấn luyện được tách ra làm validation, nên tập "
+             "test chỉ được dùng một lần, cho kết quả cuối cùng. (Mã gốc chọn mô hình trên tập test, làm kết quả bị "
+             "thổi phồng nhẹ.)", width_cm=14)
+    R.figure("fig_pipeline.png", "Quy trình thí nghiệm. Mỗi cấu hình kế thừa `base.yaml` và đổi một khóa; 7 lần chạy "
+             "được gửi thành một SLURM job array; kết quả được tổng hợp thành bảng và hình.", width_cm=15.5)
+    R.h2("6.3  Các thí nghiệm")
+    R.table([["ID", "Thay đổi", "Câu hỏi cần trả lời"]] + [list(a) for a in ABLATIONS],
+            [1.2, 6.6, 8.6], caption="Bốn ablation đã chạy. a00 là baseline đầy đủ.", size=10, center_from=9)
+    R.h2("6.4  Kết quả")
     if rows:
         base = next((r for r in rows if r["run"] == "a00_baseline"), None)
-        trows = [["Run", "Description", "PESQ", "ΔPESQ", "CSIG", "CBAK", "COVL", "STOI", "SI-SDR"]]
+        trows = [["Lần chạy", "Mô tả", "PESQ", "ΔPESQ", "CSIG", "CBAK", "COVL", "STOI", "SI-SDR"]]
         hl = []
         for r in rows:
             if r["run"].startswith("p"):
                 continue
             dp = f"{float(r['pesq']) - float(base['pesq']):+.3f}" if base and r["run"] != "noisy" else "–"
-            trows.append([r["run"].split("_")[0], r["description"], fnum(r["pesq"], 3), dp, fnum(r["csig"]),
+            trows.append([r["run"].split("_")[0], vi_desc(r), fnum(r["pesq"], 3), dp, fnum(r["csig"]),
                           fnum(r["cbak"]), fnum(r["covl"]), fnum(r["stoi"], 3), fnum(r["si_sdr"])])
             if r["run"] == "a00_baseline":
                 hl.append(len(trows) - 1)
-        R.table(trows, [1.2, 5.0, 1.5, 1.5, 1.4, 1.4, 1.4, 1.5, 1.5], highlight=tuple(hl), size=9,
-                caption="Ablation results on the 824 test utterances. ΔPESQ is relative to the full baseline (a00).")
-        R.figure("fig_results.png", "PESQ of every run. The dashed line marks the full baseline; green bars are our "
-                 "proposed improvements.")
+        R.table(trows, [1.4, 4.8, 1.5, 1.5, 1.4, 1.4, 1.4, 1.5, 1.5], highlight=tuple(hl), size=9,
+                caption="Kết quả ablation trên 824 câu test. ΔPESQ so với baseline đầy đủ (a00).")
+        R.figure("fig_results.png", "PESQ của từng lần chạy. Đường nét đứt là baseline đầy đủ; cột xanh lá là các cải "
+                 "tiến đề xuất.")
         if base:
             ab = sorted([r for r in rows if r["run"].startswith("a") and r is not base], key=lambda r: float(r["pesq"]))
-            R.p("**Components whose removal hurts most:**")
-            R.bullets([f"**{r['run'].split('_')[0]}** ({r['description']}): "
+            R.p("**Các thành phần mà khi bỏ đi gây thiệt hại nhiều nhất:**")
+            R.bullets([f"**{r['run'].split('_')[0]}** ({vi_desc(r)}): "
                        f"{float(r['pesq']) - float(base['pesq']):+.3f} PESQ" for r in ab[:3]])
     else:
-        R.table([["Run", "Description", "PESQ", "ΔPESQ", "CSIG", "CBAK", "COVL", "STOI", "SI-SDR"],
-                 ["noisy", "Noisy input", *["TBD"] * 7], ["a00", "Full baseline", *["TBD"] * 7]] +
+        R.table([["Lần chạy", "Mô tả", "PESQ", "ΔPESQ", "CSIG", "CBAK", "COVL", "STOI", "SI-SDR"],
+                 ["noisy", VI_DESC["noisy"], *["TBD"] * 7], ["a00", VI_DESC["a00"], *["TBD"] * 7]] +
                 [[a[0], a[1], *["TBD"] * 7] for a in ABLATIONS],
-                [1.2, 5.0, 1.5, 1.5, 1.4, 1.4, 1.4, 1.5, 1.5], highlight=(2,), size=9,
-                caption="Ablation results on the 824 test utterances (to be filled in automatically).")
-        R.callout("Results pending", "Training runs on the HPC cluster. After `scripts/collect_results.py`, rebuilding "
-                  "this report fills in the table, adds the results figure and lists the most important components.")
-    R.h2("6.5  What we expect, and how to read the numbers")
-    R.bullets(["**a03 (noisy phase)** should cause one of the largest drops, since explicit phase is the paper's key "
-               "contribution. The difference is often easier to *hear* (rough, robotic sound) than to see in PESQ.",
-               "**a01 (no GAN)** should lower PESQ but may *raise* SI-SDR: the discriminator optimises perceived "
-               "quality, not waveform accuracy. Comparing both metrics shows whether the GAN only fits PESQ.",
-               "**a02 (no phase losses)** shows whether the phase decoder needs direct supervision; together "
-               "with a03 it separates the value of the phase *losses* from the value of the phase *decoder*.",
-               "**a04 (BiLSTM)** shows how much of the quality comes from attention.",
-               "Differences of about **±0.03 PESQ** are within run-to-run noise on this benchmark. For close cases we "
-               "recommend repeating with 2–3 seeds and running a paired test on the per-utterance scores "
-               "(`per_file.csv`). After only 5 epochs the models are still improving, so we treat differences "
-               "below about 0.05 PESQ as inconclusive."])
-    R.h2("6.6  Left for future work")
-    R.p("These experiments are fully implemented (one config file each in `configs/ablation/`) and can be run with "
-        "the same job script (`EXPERIMENTS=configs/experiments_full.txt`), but did not fit our compute budget:")
-    R.table([["ID", "What changes", "Question it answers"]] + [list(a) for a in FUTURE_ABLATIONS],
-            [1.2, 6.6, 8.6], caption="Implemented but not run: future work.", size=10, center_from=9)
+                [1.4, 4.8, 1.5, 1.5, 1.4, 1.4, 1.4, 1.5, 1.5], highlight=(2,), size=9,
+                caption="Kết quả ablation trên 824 câu test (sẽ được điền tự động).")
+        R.callout("Đang chờ kết quả", "Các lần huấn luyện đang chạy trên cụm HPC. Sau khi chạy "
+                  "`scripts/collect_results.py`, build lại báo cáo này sẽ điền bảng, thêm hình kết quả và liệt kê các "
+                  "thành phần quan trọng nhất.")
+    R.h2("6.5  Kỳ vọng và cách đọc các con số")
+    R.bullets(["**a03 (pha nhiễu)** được kỳ vọng gây một trong những mức giảm lớn nhất, vì pha tường minh là đóng góp "
+               "chính của bài báo. Khác biệt thường *nghe* thấy rõ hơn (tiếng rè, giống robot) là thấy trong PESQ.",
+               "**a01 (không GAN)** được kỳ vọng làm giảm PESQ nhưng có thể *tăng* SI-SDR: discriminator tối ưu chất "
+               "lượng cảm nhận chứ không phải độ chính xác dạng sóng. So sánh cả hai metric cho biết GAN có chỉ đang "
+               "khớp theo PESQ hay không.",
+               "**a02 (không loss pha)** cho biết decoder pha có cần giám sát trực tiếp không; kết hợp với a03, nó tách "
+               "được giá trị của các *loss* pha với giá trị của *decoder* pha.",
+               "**a04 (BiLSTM)** cho biết bao nhiêu phần chất lượng đến từ attention.",
+               "Chênh lệch khoảng **±0.03 PESQ** nằm trong dao động giữa các lần chạy trên benchmark này. Với các trường "
+               "hợp sát nhau, nên chạy lại với 2–3 seed và làm kiểm định cặp (paired test) trên điểm từng câu "
+               "(`per_file.csv`). Sau chỉ 5 epoch mô hình vẫn đang cải thiện, nên chúng tôi coi các chênh lệch dưới "
+               "khoảng 0.05 PESQ là chưa kết luận được."])
+    R.h2("6.6  Hướng phát triển")
+    R.p("Các thí nghiệm sau đã được cài đặt đầy đủ (mỗi thí nghiệm một file cấu hình trong `configs/ablation/`) và có "
+        "thể chạy bằng cùng script (`EXPERIMENTS=configs/experiments_full.txt`), nhưng chưa vừa với ngân sách tính toán "
+        "của chúng tôi:")
+    R.table([["ID", "Thay đổi", "Câu hỏi cần trả lời"]] + [list(a) for a in FUTURE_ABLATIONS],
+            [1.2, 6.6, 8.6], caption="Đã cài đặt nhưng chưa chạy: hướng phát triển.", size=10, center_from=9)
 
     # ------------------------------------------------------------ 7 improvements
-    R.h1("7  Proposed improvements")
-    R.p("Both proposals change only the **training**, so the trained model is exactly as fast as the baseline.")
-    R.h2("7.1  P1: multi-resolution STFT loss")
-    R.p("All of MP-SENet's spectral losses use a single STFT resolution (25 ms windows). A short window gives good "
-        "time detail but poor frequency detail, and a long one the opposite. The **multi-resolution STFT loss** "
-        "compares the enhanced and clean waveforms at three resolutions (256-, 512- and 1024-point FFTs), using "
-        "spectral convergence plus log-magnitude distance. This should penalise artefacts such as pre-echo and "
-        "smeared onsets that one resolution misses. Weight: 0.1 (`loss.mrstft=0.1`).")
+    R.h1("7  Đề xuất cải tiến")
+    R.p("Cả hai đề xuất chỉ thay đổi khâu **huấn luyện**, nên mô hình sau huấn luyện chạy nhanh đúng bằng baseline.")
+    R.h2("7.1  P1: loss STFT đa phân giải (multi-resolution STFT)")
+    R.p("Mọi loss phổ của MP-SENet đều dùng một độ phân giải STFT duy nhất (cửa sổ 25 ms). Cửa sổ ngắn cho chi tiết thời "
+        "gian tốt nhưng chi tiết tần số kém, cửa sổ dài thì ngược lại. **Loss multi-resolution STFT** so sánh dạng sóng "
+        "tăng cường và dạng sóng sạch ở ba độ phân giải (FFT 256, 512 và 1024 điểm), dùng spectral convergence cộng "
+        "khoảng cách log-magnitude. Loss này được kỳ vọng phạt các lỗi như pre-echo và onset bị nhòe mà một độ phân "
+        "giải bỏ sót. Trọng số: 0.1 (`loss.mrstft=0.1`).")
     R.h2("7.2  P2: perceptual contrast stretching (PCS)")
-    R.p("PCS makes the *training target* slightly sharper than the real clean speech. The log-magnitude of the clean "
-        "spectrum is multiplied by a frequency-dependent gain between 1.0 and 1.4. The strongest gain is applied "
-        f"around 0.4–4.4 kHz, the bands that matter most for intelligibility (Figure {R.fig_no + 1}). SEMamba reports a gain of "
-        "about 0.14 PESQ from PCS on a Mamba backbone; we test whether it carries over to the Conformer-based "
-        "MP-SENet (`data.pcs=true`).")
-    R.figure("fig_pcs.png", "PCS gain per frequency (400-point FFT at 16 kHz).", width_cm=14)
-    R.h2("7.3  Results")
-    prow = [["Run", "Change", "PESQ", "ΔPESQ vs. a00", "STOI", "SI-SDR"],
-            ["p01", "+ multi-resolution STFT loss", "TBD", "TBD", "TBD", "TBD"],
-            ["p02", "+ PCS target", "TBD", "TBD", "TBD", "TBD"]]
+    R.p("PCS làm *mục tiêu huấn luyện* sắc nét hơn một chút so với tiếng nói sạch thật. Log-magnitude của phổ sạch được "
+        "nhân với một hệ số khuếch đại phụ thuộc tần số trong khoảng 1.0 đến 1.4. Hệ số mạnh nhất áp dụng quanh "
+        f"0.4–4.4 kHz, các dải quan trọng nhất cho độ dễ hiểu (Hình {R.fig_no + 1}). SEMamba báo cáo mức tăng khoảng 0.14 "
+        "PESQ nhờ PCS trên backbone Mamba; chúng tôi kiểm tra xem hiệu quả này có chuyển sang MP-SENet dựa trên "
+        "Conformer không (`data.pcs=true`).")
+    R.figure("fig_pcs.png", "Hệ số khuếch đại PCS theo tần số (FFT 400 điểm ở 16 kHz).", width_cm=14)
+    R.h2("7.3  Kết quả")
+    prow = [["Lần chạy", "Thay đổi", "PESQ", "ΔPESQ so với a00", "STOI", "SI-SDR"],
+            ["p01", "+ loss multi-resolution STFT", "TBD", "TBD", "TBD", "TBD"],
+            ["p02", "+ mục tiêu PCS", "TBD", "TBD", "TBD", "TBD"]]
     if rows:
         rmap = {r["run"].split("_")[0]: r for r in rows}
         b = rmap.get("a00")
@@ -716,59 +737,64 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
             if r:
                 row[2:] = [fnum(r["pesq"], 3), f"{float(r['pesq']) - float(b['pesq']):+.3f}" if b else "–",
                            fnum(r["stoi"], 3), fnum(r["si_sdr"])]
-    R.table(prow, [1.4, 6.0, 2.0, 2.8, 2.0, 2.2], caption="Proposed improvements on the test set.")
-    R.h2("7.4  Further ideas (not implemented)")
-    R.bullets(["**Combining P1 and P2** (config `p03`): only worthwhile if each helps on its own.",
-               "**Longer training** of the baseline and the best proposal, to compare with published numbers.",
-               "**Mamba blocks** instead of Conformers: linear cost in utterance length (SEMamba).",
-               "**Causal / streaming version** with chunked attention, for real-time use in calls and hearing aids.",
-               "**Vietnamese data:** build a noisy/clean Vietnamese set (e.g. VIVOS mixed with DEMAND/MUSAN noise) "
-               "and fine-tune.",
-               "**Generalisation:** train or test on the larger DNS-Challenge data."])
+    R.table(prow, [1.6, 5.6, 2.0, 3.0, 2.0, 2.2], caption="Các cải tiến đề xuất trên tập test.")
+    R.h2("7.4  Các ý tưởng khác (chưa cài đặt)")
+    R.bullets(["**Kết hợp P1 và P2** (cấu hình `p03`): chỉ đáng làm nếu mỗi đề xuất có ích khi đứng riêng.",
+               "**Huấn luyện lâu hơn** cho baseline và đề xuất tốt nhất, để so sánh với các con số đã công bố.",
+               "**Khối Mamba** thay cho Conformer: chi phí tuyến tính theo độ dài câu (SEMamba).",
+               "**Phiên bản causal / streaming** với chunked attention, để dùng thời gian thực trong cuộc gọi và máy trợ "
+               "thính.",
+               "**Dữ liệu tiếng Việt:** xây dựng một tập nhiễu/sạch tiếng Việt (ví dụ VIVOS trộn với nhiễu DEMAND/MUSAN) "
+               "và fine-tune.",
+               "**Tổng quát hóa:** huấn luyện hoặc test trên dữ liệu DNS-Challenge lớn hơn."])
 
     # ------------------------------------------------------------ 8 repo
-    R.h1("8  Implementation and reproducibility")
-    R.p("The code is a standard Python research repository: configuration files, a package under `src/`, scripts, "
-        "SLURM job files and unit tests.")
-    R.table([["Folder", "Contents"],
-             ["configs/", "`base.yaml` (baseline), `ablation/a01…a10, p01…p03` (one change each), `debug.yaml`"],
-             ["src/se/", "data loading, model, losses, metrics, `train.py`, `evaluate.py`, `enhance.py`"],
-             ["scripts/", "dataset download, results collection, official-model demo, scoring any folder"],
-             ["slurm/", "single run, job array for all experiments, multi-GPU, noisy baseline"],
-             ["notebooks/", "demo notebook: listen to and compare the ablation runs"],
-             ["tests/", "unit tests for shapes, losses, metrics and configuration"],
-             ["docs/", "literature review, ablation design, slides and this report (both auto-generated)"]],
-            [3.4, 13.0], caption="Repository layout.", center_from=9)
-    R.p("Reproducing everything takes five commands:")
-    cmds = [("pip install -e \".[dev]\" && pytest -q", "install and run the tests"),
-            ("python scripts/prepare_vbd.py --out data", "download + resample VoiceBank-DEMAND"),
-            ("sbatch --array=0-6%1 slurm/ablation_array.sbatch", "train + evaluate the 7 runs"),
-            ("python scripts/collect_results.py", "results table and chart"),
-            ("python docs/report/build_report.py", "rebuild this report")]
+    R.h1("8  Cài đặt và khả năng tái lập")
+    R.p("Mã nguồn được tổ chức như một repository nghiên cứu Python tiêu chuẩn: file cấu hình, một package trong `src/`, "
+        "các script, file job SLURM và unit test.")
+    R.table([["Thư mục", "Nội dung"],
+             ["configs/", "`base.yaml` (baseline), `ablation/a01…a10, p01…p03` (mỗi file một thay đổi), `debug.yaml`"],
+             ["src/se/", "nạp dữ liệu, mô hình, loss, metric, `train.py`, `evaluate.py`, `enhance.py`"],
+             ["scripts/", "tải dữ liệu, tổng hợp kết quả, demo mô hình chính thức, chấm điểm một thư mục bất kỳ"],
+             ["slurm/", "chạy đơn lẻ, job array cho mọi thí nghiệm, multi-GPU, baseline đầu vào nhiễu"],
+             ["notebooks/", "notebook demo: nghe và so sánh các lần chạy ablation"],
+             ["tests/", "unit test cho kích thước tensor, loss, metric và cấu hình"],
+             ["docs/", "tổng quan tài liệu, thiết kế ablation, slide và báo cáo này (cả hai được sinh tự động)"]],
+            [3.4, 13.0], caption="Cấu trúc repository.", center_from=9)
+    R.p("Tái lập toàn bộ chỉ cần năm lệnh:")
+    cmds = [("pip install -e \".[dev]\" && pytest -q", "cài đặt và chạy test"),
+            ("python scripts/prepare_vbd.py --out data", "tải + resample VoiceBank-DEMAND"),
+            ("sbatch --array=0-6%1 slurm/ablation_array.sbatch", "huấn luyện + đánh giá 7 lần chạy"),
+            ("python scripts/collect_results.py", "bảng và biểu đồ kết quả"),
+            ("python docs/report/build_report.py", "build lại báo cáo này")]
     R.code([f"{c:<52}# {d}" for c, d in cmds])
-    R.p("Checks we ran: all 20 unit tests pass; an end-to-end smoke run on synthetic data completes training, the "
-        "discriminator step, checkpointing and test evaluation; and the full model has 2.047 M parameters, matching "
-        "the paper. Training jobs resume automatically from the last checkpoint if they hit the cluster time limit.")
+    R.p("Các kiểm tra đã thực hiện: cả 21 unit test đều qua; một lần chạy thử end-to-end trên dữ liệu tổng hợp hoàn tất "
+        "huấn luyện, bước discriminator, lưu checkpoint và đánh giá trên tập test; mô hình đầy đủ có 2.047 M tham số, "
+        "khớp với bài báo. Job huấn luyện tự động tiếp tục từ checkpoint cuối nếu chạm giới hạn thời gian của cụm. PESQ "
+        "cho discriminator được tính song song trên nhiều tiến trình CPU để tăng tốc huấn luyện.")
 
     # ------------------------------------------------------------ 9 conclusion
-    R.h1("9  Conclusion")
-    R.p("Speech enhancement has moved from simple magnitude masks to models that estimate phase explicitly, learn from "
-        "perceptual metrics and, more recently, generate speech with diffusion or language models. Discriminative "
-        "models such as MP-SENet still give the best scores on standard benchmarks for their size, while generative "
-        "models are more robust in unseen conditions.")
-    R.p("We re-implemented MP-SENet, built a fully reproducible ablation framework, ran four single-factor "
-        "ablations of its key ideas (six more are ready to run), and proposed two training-only improvements. The study shows *which* of MP-SENet's many "
-        "components carry its performance, which gives practical guidance for building smaller or faster models and "
-        "for applying them to new languages such as Vietnamese.")
+    R.h1("9  Kết luận")
+    R.p("Tăng cường tiếng nói đã đi từ các mask biên độ đơn giản đến các mô hình ước lượng pha tường minh, học từ metric "
+        "cảm nhận, và gần đây là sinh tiếng nói bằng diffusion hoặc language model. Các mô hình discriminative như "
+        "MP-SENet vẫn cho điểm tốt nhất trên benchmark chuẩn so với kích thước, trong khi mô hình sinh bền vững hơn trong "
+        "điều kiện chưa gặp.")
+    R.p("Chúng tôi đã cài đặt lại MP-SENet, xây dựng một framework ablation tái lập được hoàn toàn, chạy bốn ablation "
+        "một yếu tố cho các ý tưởng chính (sáu ablation khác đã sẵn sàng để chạy), và đề xuất hai cải tiến chỉ ở khâu "
+        "huấn luyện. Nghiên cứu cho thấy *những* thành phần nào trong số rất nhiều thành phần của MP-SENet thực sự tạo "
+        "nên hiệu năng của nó, từ đó gợi ý thực tế cho việc xây dựng mô hình nhỏ hơn hoặc nhanh hơn và áp dụng cho ngôn "
+        "ngữ mới như tiếng Việt.")
 
     # ------------------------------------------------------------ appendix + refs
-    R.h1("Appendix A  Work division")
-    R.table([["Member", "Student ID", "Tasks", "Share"],
-             ["Chau Kien Dat", "25C15036", "Literature survey (P1–P6) and comparison, official demo and notebook, slides, video; report Ch. 1–4", "50%"],
-             ["Nguyen Vi Khang", "25C15043", "Re-implementation, configs, HPC training, evaluation metrics, ablation analysis, proposed improvements; report Ch. 5–9", "50%"]],
+    R.h1("Phụ lục A  Phân công công việc")
+    R.table([["Thành viên", "MSHV", "Công việc", "Tỉ lệ"],
+             ["Chau Kien Dat", "25C15036", "Khảo sát tài liệu (P1–P6) và so sánh, demo mô hình chính thức và notebook, "
+              "slide; viết toàn bộ báo cáo", "50%"],
+             ["Nguyen Vi Khang", "25C15043", "Cài đặt lại mô hình, cấu hình, huấn luyện trên HPC, metric đánh giá, phân tích "
+              "ablation, cải tiến đề xuất; quay video thuyết trình", "50%"]],
             [3.2, 2.6, 8.8, 1.8], center_from=3)
 
-    R.h1("References")
+    R.h1("Tài liệu tham khảo")
     refs = [
         "S. Abdulatif, R. Cao, B. Yang. CMGAN: Conformer-based metric-GAN for monaural speech enhancement. IEEE/ACM TASLP, 32, 2024.",
         "Y.-X. Lu, Y. Ai, Z.-H. Ling. MP-SENet: A speech enhancement model with parallel denoising of magnitude and phase spectra. Interspeech 2023.",
@@ -795,6 +821,7 @@ def build(out_docx: Path, results_csv: Path, data_root: Path):
     R.save(out_docx)
     print(f"[report] {R.fig_no} figures, {R.tab_no} captioned tables -> {out_docx} "
           f"(results: {'filled' if rows else 'pending'})")
+
 
 
 def main():

@@ -32,6 +32,26 @@ plt.rcParams.update({
 })
 
 
+# Vietnamese labels for the runs (results/ablation_results.csv keeps English descriptions).
+VI_DESC = {
+    "noisy": "Đầu vào nhiễu (không xử lý)",
+    "a00": "Baseline đầy đủ (kiểu MP-SENet)",
+    "a01": "bỏ metric discriminator (không GAN)",
+    "a02": "bỏ các loss pha",
+    "a03": "decoder chỉ biên độ (dùng pha nhiễu)",
+    "a04": "BiLSTM thay cho Conformer",
+    "a05": "bỏ loss nhất quán STFT",
+    "a06": "bỏ loss miền thời gian + loss phức",
+    "a07": "decoder ánh xạ phổ phức",
+    "a08": "không nén biên độ (c = 1)",
+    "a09": "2 khối TS-Conformer",
+    "a10": "mask sigmoid thường (β = 1)",
+    "p01": "+ loss MR-STFT (đề xuất)",
+    "p02": "+ mục tiêu PCS (đề xuất)",
+    "p03": "+ MR-STFT + PCS (đề xuất)",
+}
+
+
 def save(fig, name):
     OUT.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT / name, facecolor="white")
@@ -81,13 +101,13 @@ def fig_spectrogram(data_root: Path | None):
         clean = sum(np.sin(k * ph) / k for k in range(1, 25)) * env * 0.1
         noisy = clean + 0.05 * np.convolve(rng.standard_normal(len(t)), np.ones(6) / 6, "same")
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.0), sharey=True)
-    for ax, (name, x) in zip(axes, [("Noisy input  y = s + n", noisy), ("Clean target  s", clean)]):
+    for ax, (name, x) in zip(axes, [("Đầu vào nhiễu  y = s + n", noisy), ("Mục tiêu sạch  s", clean)]):
         ax.specgram(np.asarray(x) + 1e-9, NFFT=400, Fs=sr, noverlap=300, cmap="magma", vmin=-130)
         ax.set_title(name)
-        ax.set_xlabel("time (s)")
+        ax.set_xlabel("thời gian (s)")
         ax.set_ylim(0, 8000)
-    axes[0].set_ylabel("frequency (Hz)")
-    fig.suptitle("VoiceBank-DEMAND utterance p232_001" if real else "Illustration (synthetic voiced signal)",
+    axes[0].set_ylabel("tần số (Hz)")
+    fig.suptitle("Câu p232_001 trong VoiceBank-DEMAND" if real else "Minh họa (tín hiệu hữu thanh tổng hợp)",
                  fontsize=10, color=MUTED, y=0.02)
     fig.tight_layout()
     save(fig, "fig_spectrogram.png")
@@ -95,14 +115,14 @@ def fig_spectrogram(data_root: Path | None):
 
 def fig_taxonomy():
     fig, ax = canvas(10, 4.6, (0, 10), (0, 4.6))
-    node(ax, 2.9, 3.7, 4.2, 0.7, "Single-channel speech enhancement", fc=INK, fs=11)
-    cols = [(0.2, PLUM, "Discriminative (T-F)", "predict a mask or spectrum\nin one forward pass",
+    node(ax, 2.9, 3.7, 4.2, 0.7, "Tăng cường tiếng nói một kênh", fc=INK, fs=11)
+    cols = [(0.2, PLUM, "Discriminative (T-F)", "dự đoán mask hoặc phổ\ntrong một lần forward",
              "MetricGAN+ · CMGAN\nMP-SENet · SEMamba\nDeepFilterNet",
-             "+ highest PESQ, ~2 M params\n− phase hard, domain shift"),
-            (3.5, MAGENTA, "Generative: diffusion", "learn p(clean | noisy)\nand sample from it",
-             "SGMSE+ · StoRM · DOSE", "+ natural, robust\n− many steps, hallucination"),
-            (6.8, CORAL, "Language-model based", "predict clean discrete\ntokens with an LM",
-             "SELM · MaskSR · GenSE", "+ real-world, many distortions\n− large, slow, drift")]
+             "+ PESQ cao nhất, ~2 M tham số\n− khó với pha, lệch miền dữ liệu"),
+            (3.5, MAGENTA, "Mô hình sinh: diffusion", "học p(sạch | nhiễu)\nrồi lấy mẫu từ đó",
+             "SGMSE+ · StoRM · DOSE", "+ tự nhiên, bền vững\n− nhiều bước, ảo giác"),
+            (6.8, CORAL, "Dựa trên LM", "dự đoán token rời rạc\nsạch bằng LM",
+             "SELM · MaskSR · GenSE", "+ dữ liệu thực, nhiều loại méo\n− lớn, chậm, lệch nội dung")]
     for x, c, h, d, ex, pc in cols:
         link(ax, (5.0, 3.68), (x + 1.5, 3.05), rad=0.0)
         node(ax, x, 2.35, 3.0, 0.7, h, fc=c, fs=11)
@@ -136,14 +156,14 @@ def fig_timeline():
     from matplotlib.lines import Line2D
     ax.legend(handles=[Line2D([], [], marker="o", ls="", color=PLUM, label="discriminative"),
                        Line2D([], [], marker="o", ls="", color=MAGENTA, label="diffusion"),
-                       Line2D([], [], marker="o", ls="", color=AMBER, label="language-model based"),
-                       Line2D([], [], marker="o", ls="", color=CORAL, label="chosen model")],
+                       Line2D([], [], marker="o", ls="", color=AMBER, label="dựa trên language model"),
+                       Line2D([], [], marker="o", ls="", color=CORAL, label="mô hình được chọn")],
               loc="upper left", fontsize=8.5, frameon=False, ncol=4, bbox_to_anchor=(0, 1.12))
     save(fig, "fig_timeline.png")
 
 
 def fig_reported_pesq():
-    names = ["Noisy input", "SGMSE+ (TASLP'23)", "MetricGAN+ (IS'21)", "CMGAN (TASLP'24)",
+    names = ["Đầu vào nhiễu", "SGMSE+ (TASLP'23)", "MetricGAN+ (IS'21)", "CMGAN (TASLP'24)",
              "MP-SENet (IS'23)", "SEMamba+PCS (SLT'24)"]
     vals = [1.97, 2.93, 3.15, 3.41, 3.50, 3.69]
     cols = [GREY, MAGENTA, PLUM, PLUM, CORAL, AMBER]
@@ -154,31 +174,31 @@ def fig_reported_pesq():
         ax.text(v + 0.03, yi, f"{v:.2f}", va="center", fontsize=10, color=INK)
     ax.set_yticks(y, names)
     ax.set_xlim(1, 4.1)
-    ax.set_xlabel("PESQ (wide-band), higher is better")
+    ax.set_xlabel("PESQ (wide-band), càng cao càng tốt")
     ax.grid(axis="x", color="#ECE6EF")
     ax.set_axisbelow(True)
-    ax.set_title("Reported results on the VoiceBank-DEMAND test set", loc="left")
+    ax.set_title("Kết quả công bố trên tập test VoiceBank-DEMAND", loc="left")
     save(fig, "fig_reported_pesq.png")
 
 
 def fig_architecture():
     fig, ax = canvas(11, 4.4, (0, 11), (0, 4.4))
-    node(ax, 0.1, 1.55, 1.6, 1.3, "Noisy STFT", "|Y|^0.3  and  ∠Y\n201 bins × T frames", fc=TINT, tc=INK, fs=10.5)
+    node(ax, 0.1, 1.55, 1.6, 1.3, "STFT nhiễu", "|Y|^0.3  và  ∠Y\n201 bin × T khung", fc=TINT, tc=INK, fs=10.5)
     link(ax, (1.72, 2.2), (2.05, 2.2))
-    node(ax, 2.05, 1.45, 1.75, 1.5, "Dense\nencoder", "dilated DenseBlock\nfreq. 201 → 100", fs=10.5)
+    node(ax, 2.05, 1.45, 1.75, 1.5, "Dense\nencoder", "DenseBlock giãn\ntần số 201 → 100", fs=10.5)
     link(ax, (3.82, 2.2), (4.15, 2.2))
-    node(ax, 4.15, 1.2, 2.2, 2.0, "4 × TS-Conformer", "Conformer over time\nthen over frequency", fc=MAGENTA,
+    node(ax, 4.15, 1.2, 2.2, 2.0, "4 × TS-Conformer", "Conformer theo thời gian\nrồi theo tần số", fc=MAGENTA,
          fs=10.5)
     link(ax, (6.37, 2.6), (6.9, 3.25))
     link(ax, (6.37, 1.8), (6.9, 1.15))
-    node(ax, 6.9, 2.75, 2.2, 1.25, "Magnitude decoder", "mask = 2·σ(a_f·x)\n|Ŝ| = mask · |Y|", fc=CORAL,
+    node(ax, 6.9, 2.75, 2.2, 1.25, "Decoder biên độ", "mask = 2·σ(a_f·x)\n|Ŝ| = mask · |Y|", fc=CORAL,
          fs=10.5)
-    node(ax, 6.9, 0.4, 2.2, 1.25, "Phase decoder", "predicts (r, i)\n∠Ŝ = atan2(i, r)", fc=AMBER, tc=INK,
+    node(ax, 6.9, 0.4, 2.2, 1.25, "Decoder pha", "dự đoán (r, i)\n∠Ŝ = atan2(i, r)", fc=AMBER, tc=INK,
          fs=10.5)
     link(ax, (9.12, 3.35), (9.5, 2.55))
     link(ax, (9.12, 1.05), (9.5, 1.85))
-    node(ax, 9.5, 1.55, 1.4, 1.3, "iSTFT", "enhanced\nwaveform ŝ", fc=TINT, tc=INK, fs=10.5)
-    ax.text(5.25, 0.55, "shared representation", ha="center", fontsize=9, color=MUTED, style="italic")
+    node(ax, 9.5, 1.55, 1.4, 1.3, "iSTFT", "dạng sóng\ntăng cường ŝ", fc=TINT, tc=INK, fs=10.5)
+    ax.text(5.25, 0.55, "biểu diễn dùng chung", ha="center", fontsize=9, color=MUTED, style="italic")
     save(fig, "fig_architecture.png")
 
 
@@ -186,12 +206,12 @@ def fig_tfblock():
     fig, ax = canvas(10, 2.7, (0, 10), (0, 2.7))
     node(ax, 0.1, 0.8, 1.7, 1.1, "B×C×T×F", "feature map", fc=TINT, tc=INK, fs=10)
     link(ax, (1.82, 1.35), (2.25, 1.35))
-    node(ax, 2.25, 0.6, 2.6, 1.5, "Time Conformer", "each frequency bin is a\nsequence over T frames", fc=MAGENTA,
+    node(ax, 2.25, 0.6, 2.6, 1.5, "Conformer thời gian", "mỗi bin tần số là một\nchuỗi theo T khung", fc=MAGENTA,
          fs=10)
     link(ax, (4.87, 1.35), (5.3, 1.35))
-    node(ax, 5.3, 0.6, 2.6, 1.5, "Frequency Conformer", "each frame is a\nsequence over F bins", fc=PLUM, fs=10)
+    node(ax, 5.3, 0.6, 2.6, 1.5, "Conformer tần số", "mỗi khung là một\nchuỗi theo F bin", fc=PLUM, fs=10)
     link(ax, (7.92, 1.35), (8.3, 1.35))
-    node(ax, 8.3, 0.8, 1.6, 1.1, "B×C×T×F", "same shape", fc=TINT, tc=INK, fs=10)
+    node(ax, 8.3, 0.8, 1.6, 1.1, "B×C×T×F", "cùng kích thước", fc=TINT, tc=INK, fs=10)
     ax.text(5, 2.45, "Conformer = ½FFN → multi-head self-attention → depthwise conv (k=31) → ½FFN → LayerNorm",
             ha="center", fontsize=9.5, color=MUTED)
     save(fig, "fig_tfblock.png")
@@ -201,18 +221,18 @@ def fig_phase_wrapping():
     x = np.linspace(-3 * np.pi, 3 * np.pi, 2000)
     aw = np.abs(x - np.round(x / (2 * np.pi)) * 2 * np.pi)
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.0))
-    axes[0].plot(x, np.abs(x), color=GREY, lw=2, label="naive |Δφ|")
+    axes[0].plot(x, np.abs(x), color=GREY, lw=2, label="ngây thơ |Δφ|")
     axes[0].plot(x, aw, color=CORAL, lw=2.2, label="anti-wrapping f(Δφ)")
     axes[0].set_xticks([-2 * np.pi, 0, 2 * np.pi], ["−2π", "0", "2π"])
-    axes[0].set_xlabel("phase error Δφ (radians)")
+    axes[0].set_xlabel("sai số pha Δφ (radian)")
     axes[0].set_ylabel("loss")
-    axes[0].set_title("Phase error: 2π is not an error", loc="left")
+    axes[0].set_title("Sai số pha: 2π không phải là sai số", loc="left")
     axes[0].legend(frameon=False, fontsize=9)
     t = np.linspace(0, 1, 400)
     true = 2 * np.pi * 6 * t
     axes[1].plot(t, np.angle(np.exp(1j * true)), color=PLUM, lw=1.6)
-    axes[1].set_title("Measured phase is wrapped to (−π, π]", loc="left")
-    axes[1].set_xlabel("time")
+    axes[1].set_title("Pha đo được bị quấn vào (−π, π]", loc="left")
+    axes[1].set_xlabel("thời gian")
     axes[1].set_yticks([-np.pi, 0, np.pi], ["−π", "0", "π"])
     fig.tight_layout()
     save(fig, "fig_phase_wrapping.png")
@@ -223,25 +243,25 @@ def fig_compression_mask():
     m = np.linspace(0, 1, 400)
     for c, col in [(1.0, GREY), (0.5, MAGENTA), (0.3, CORAL)]:
         axes[0].plot(m, m ** c, color=col, lw=2.2, label=f"c = {c}")
-    axes[0].set_xlabel("magnitude |X|")
+    axes[0].set_xlabel("biên độ |X|")
     axes[0].set_ylabel("|X|^c")
-    axes[0].set_title("Power-law compression lifts quiet bins", loc="left")
+    axes[0].set_title("Nén lũy thừa nâng các bin nhỏ", loc="left")
     axes[0].legend(frameon=False, fontsize=9)
     x = np.linspace(-6, 6, 400)
     axes[1].plot(x, 1 / (1 + np.exp(-x)), color=GREY, lw=2.2, label="sigmoid (β = 1)")
-    axes[1].plot(x, 2 / (1 + np.exp(-x)), color=CORAL, lw=2.2, label="learnable sigmoid (β = 2)")
+    axes[1].plot(x, 2 / (1 + np.exp(-x)), color=CORAL, lw=2.2, label="sigmoid học được (β = 2)")
     axes[1].axhline(1, color=MUTED, lw=0.8, ls="--")
-    axes[1].text(-5.8, 1.05, "mask = 1 (keep the input)", fontsize=8.5, color=MUTED)
-    axes[1].set_xlabel("decoder output x")
-    axes[1].set_ylabel("mask value")
-    axes[1].set_title("β = 2 lets the mask also amplify", loc="left")
+    axes[1].text(-5.8, 1.05, "mask = 1 (giữ nguyên đầu vào)", fontsize=8.5, color=MUTED)
+    axes[1].set_xlabel("đầu ra decoder x")
+    axes[1].set_ylabel("giá trị mask")
+    axes[1].set_title("β = 2 cho phép mask khuếch đại", loc="left")
     axes[1].legend(frameon=False, fontsize=9, loc="lower right")
     fig.tight_layout()
     save(fig, "fig_compression_mask.png")
 
 
 def fig_losses():
-    names = ["Magnitude MSE", "Phase (IP+GD+IAF)", "Time L1", "Complex MSE", "STFT consistency", "Metric GAN"]
+    names = ["Magnitude MSE", "Pha (IP+GD+IAF)", "Time L1", "Complex MSE", "STFT consistency", "Metric GAN"]
     w = [0.9, 0.3, 0.2, 0.1, 0.1, 0.05]
     cols = [CORAL, AMBER, PLUM, MAGENTA, PLUM, MAGENTA]
     fig, ax = plt.subplots(figsize=(8, 2.9))
@@ -251,8 +271,8 @@ def fig_losses():
         ax.text(v + 0.012, yi, f"{v:g}", va="center", fontsize=10)
     ax.set_yticks(y, names)
     ax.set_xlim(0, 1.0)
-    ax.set_xlabel("weight in the total loss")
-    ax.set_title("The six training objectives and their weights", loc="left")
+    ax.set_xlabel("trọng số trong loss tổng")
+    ax.set_title("Sáu hàm mục tiêu huấn luyện và trọng số", loc="left")
     ax.grid(axis="x", color="#ECE6EF")
     ax.set_axisbelow(True)
     save(fig, "fig_losses.png")
@@ -266,19 +286,19 @@ def fig_pcs():
     fig, ax = plt.subplots(figsize=(8, 2.8))
     ax.fill_between(f, 1, g, color=AMBER, alpha=0.25, step="mid")
     ax.step(f, g, where="mid", color=CORAL, lw=2.2)
-    ax.set_xlabel("frequency (kHz)")
-    ax.set_ylabel("gain g(f)")
+    ax.set_xlabel("tần số (kHz)")
+    ax.set_ylabel("hệ số g(f)")
     ax.set_ylim(0.95, 1.5)
-    ax.set_title("PCS: stronger stretching in the bands most important for intelligibility", loc="left")
+    ax.set_title("PCS: kéo giãn mạnh hơn ở các dải quan trọng nhất cho độ dễ hiểu", loc="left")
     ax.grid(color="#ECE6EF")
     save(fig, "fig_pcs.png")
 
 
 def fig_pipeline():
     fig, ax = canvas(11, 2.3, (0, 11), (0, 2.3))
-    steps = [("Prepare", "download VB-D\n48 → 16 kHz", PLUM), ("Configure", "base.yaml +\none change", MAGENTA),
-             ("Train", "SLURM array\n7 runs", CORAL), ("Evaluate", "824 test files\n8 metrics", AMBER),
-             ("Collect", "CSV · table\nchart", PLUM), ("Report", "slides & report\nauto-filled", MAGENTA)]
+    steps = [("Chuẩn bị", "tải VB-D\n48 → 16 kHz", PLUM), ("Cấu hình", "base.yaml +\nmột thay đổi", MAGENTA),
+             ("Huấn luyện", "SLURM array\n7 lần chạy", CORAL), ("Đánh giá", "824 file test\n8 metric", AMBER),
+             ("Tổng hợp", "CSV · bảng\nbiểu đồ", PLUM), ("Báo cáo", "slide & báo cáo\ntự điền", MAGENTA)]
     for i, (h, d, c) in enumerate(steps):
         x = 0.1 + i * 1.83
         node(ax, x, 0.35, 1.5, 1.6, h, d, fc=c, tc=INK if c == AMBER else "white", fs=10.5)
@@ -289,8 +309,8 @@ def fig_pipeline():
 
 def fig_split():
     fig, ax = plt.subplots(figsize=(8, 1.7))
-    parts = [("Training: 26 speakers, ≈10.8k pairs", 10800, PLUM), ("Validation: p226, p287 (≈770)", 770, AMBER),
-             ("Test: 2 unseen speakers, 824", 824, CORAL)]
+    parts = [("Huấn luyện: 26 người nói, ≈10.8k cặp", 10800, PLUM), ("Validation: p226, p287 (≈770)", 770, AMBER),
+             ("Test: 2 người nói chưa gặp, 824", 824, CORAL)]
     left = 0
     for name, n, c in parts:
         ax.barh(0, n, left=left, color=c, height=0.55)
@@ -317,7 +337,7 @@ def load_results(path: Path):
 def fig_results(rows):
     rr = [r for r in rows if r["run"] != "noisy" and r.get("pesq")]
     base = next((float(r["pesq"]) for r in rr if r["run"] == "a00_baseline"), None)
-    labels = [f"{r['run'].split('_')[0]}  {r['description']}" for r in rr]
+    labels = [f"{r['run'].split('_')[0]}  {VI_DESC.get(r['run'].split('_')[0], r['description'])}" for r in rr]
     vals = [float(r["pesq"]) for r in rr]
     cols = [AMBER if r["run"].startswith("a00") else GOOD if r["run"].startswith("p") else PLUM for r in rr]
     fig, ax = plt.subplots(figsize=(9, 0.38 * len(rr) + 1.2))
@@ -329,8 +349,8 @@ def fig_results(rows):
         ax.axvline(base, color=AMBER, ls="--", lw=1.2)
     ax.set_yticks(y, labels, fontsize=9.5)
     ax.set_xlim(min(vals) - 0.15, max(vals) + 0.08)
-    ax.set_xlabel("PESQ (wide-band) on the test set")
-    ax.set_title("Ablation and proposals (dashed line = full baseline)", loc="left")
+    ax.set_xlabel("PESQ (wide-band) trên tập test")
+    ax.set_title("Ablation và đề xuất (nét đứt = baseline đầy đủ)", loc="left")
     ax.grid(axis="x", color="#ECE6EF")
     ax.set_axisbelow(True)
     save(fig, "fig_results.png")

@@ -1,76 +1,83 @@
-# Literature review: single-channel speech enhancement (2021 – 2025)
+# Khảo sát tài liệu: tăng cường tiếng nói một kênh (2021 – 2025)
 
-> Numbers are **as reported by the authors** on VoiceBank-DEMAND (VB-D) unless noted.
-> Venue ranks: IEEE/ACM TASLP is a Q1 journal; Interspeech is CORE A; NeurIPS and ICLR are CORE A\*.
-> Check every citation and rank against the official sources before submitting.
+> Các con số là **theo công bố của tác giả** trên VoiceBank-DEMAND (VB-D) trừ khi có ghi chú khác.
+> Xếp hạng nơi công bố: IEEE/ACM TASLP là tạp chí Q1; Interspeech là CORE A; NeurIPS và ICLR là CORE A\*.
+> Cần đối chiếu mọi trích dẫn và xếp hạng với nguồn chính thức trước khi nộp.
 
-## 1. How the problem is solved today
+## 1. Bài toán được giải quyết thế nào hiện nay
 
-Speech enhancement (SE) recovers clean speech `s` from a noisy mixture `y = s + n`. Current work falls into three groups:
+Tăng cường tiếng nói (speech enhancement, SE) khôi phục tiếng nói sạch `s` từ hỗn hợp nhiễu `y = s + n`. Các công trình
+hiện nay chia thành ba nhóm:
 
-| Group | Idea | Typical models | Strengths | Weaknesses |
+| Nhóm | Ý tưởng | Mô hình tiêu biểu | Ưu điểm | Nhược điểm |
 |---|---|---|---|---|
-| **Discriminative, T-F domain** | Predict a mask or a spectrum from the STFT | MetricGAN+, CMGAN, MP-SENet, SEMamba, DeepFilterNet | Best PESQ on VB-D, small (~2 M params), fast | Can leave over-suppression artefacts; phase is hard to model; may not generalise beyond the training noise |
-| **Generative (diffusion / score-based)** | Learn the distribution of clean speech, sample it given the noisy input | SGMSE+, StoRM, DOSE | Natural-sounding output, robust to unseen conditions, also handles dereverberation | Many network evaluations per utterance (slow); can hallucinate phonemes at low SNR; lower PESQ than the best discriminative models |
-| **Language-model / token-based** | Turn speech into discrete codec / SSL tokens, then predict clean tokens with an LM | SELM, MaskSR, GenSE | Strong in real-world, multi-distortion conditions; one model for many tasks | Very large; output can drift from the speaker or content; intrusive metrics such as PESQ penalise them |
+| **Discriminative, miền T-F** | Dự đoán mask hoặc phổ từ STFT | MetricGAN+, CMGAN, MP-SENet, SEMamba, DeepFilterNet | PESQ tốt nhất trên VB-D, nhỏ (~2 M tham số), nhanh | Có thể để lại lỗi do triệt nhiễu quá mức; khó mô hình hóa pha; có thể không tổng quát hóa ngoài nhiễu huấn luyện |
+| **Mô hình sinh (diffusion / score-based)** | Học phân phối của tiếng nói sạch, lấy mẫu có điều kiện theo đầu vào nhiễu | SGMSE+, StoRM, DOSE | Đầu ra tự nhiên, bền vững với điều kiện chưa gặp, xử lý được cả tiếng vang | Nhiều lần chạy mạng cho mỗi câu (chậm); có thể ảo giác âm vị ở SNR thấp; PESQ thấp hơn mô hình discriminative tốt nhất |
+| **Language model / dựa trên token** | Chuyển tiếng nói thành token codec / SSL rời rạc, rồi dự đoán token sạch bằng LM | SELM, MaskSR, GenSE | Mạnh trong điều kiện thực tế, nhiều loại méo; một mô hình cho nhiều tác vụ | Rất lớn; đầu ra có thể lệch giọng hoặc nội dung; các metric intrusive như PESQ phạt điều này |
 
-Trends: (i) **explicit phase modelling** (magnitude + phase in parallel, anti-wrapping losses); (ii) **metric-oriented training** (a discriminator that learns PESQ); (iii) **two-stage time/frequency sequence modelling** (Conformer → Mamba); (iv) **generative models** for robustness; (v) **real-time / low-complexity** designs for devices (DeepFilterNet).
+Xu hướng: (i) **mô hình hóa pha tường minh** (biên độ + pha song song, loss anti-wrapping); (ii) **huấn luyện hướng
+metric** (discriminator học PESQ); (iii) **mô hình chuỗi hai giai đoạn thời gian/tần số** (Conformer → Mamba);
+(iv) **mô hình sinh** để tăng độ bền vững; (v) thiết kế **thời gian thực / độ phức tạp thấp** cho thiết bị (DeepFilterNet).
 
-**Vietnam:** we found few dedicated SE papers in Q1/Q2 venues. Most Vietnamese work deals with noise as part of other tasks: noise-augmented training for Vietnamese ASR (e.g. a 2025 *Tạp chí Khoa học* paper that mixes 2000 h of real Vietnamese noise into a 200 h corpus) and denoising found data for TTS (VLSP 2020/2021 systems). Front-end SE for Vietnamese speech, where there is no public VB-D-style corpus, is still largely open. *(Add any domestic papers your group knows.)*
+**Việt Nam:** chúng tôi tìm thấy ít bài báo SE chuyên biệt ở các nơi công bố Q1/Q2. Phần lớn công trình tại Việt Nam xử lý
+nhiễu như một phần của bài toán khác: huấn luyện ASR tiếng Việt với nhiễu tăng cường (ví dụ một bài trên *Tạp chí Khoa học*
+năm 2025 trộn 2000 giờ nhiễu thực tế của Việt Nam vào kho 200 giờ) và khử nhiễu dữ liệu thu thập cho TTS (các hệ thống VLSP
+2020/2021). Tăng cường tiếng nói làm khâu tiền xử lý cho tiếng Việt, khi chưa có kho dữ liệu công khai kiểu VB-D, vẫn còn
+là hướng mở. *(Bổ sung các bài báo trong nước mà nhóm biết.)*
 
-## 2. Selected papers
+## 2. Các bài báo được chọn
 
 ### P1. CMGAN: Conformer-based Metric GAN for Monaural Speech Enhancement
-*S. Abdulatif, R. Cao, B. Yang. IEEE/ACM TASLP, vol. 32, 2024 (Q1). Short version at Interspeech 2022.*
-- **Method:** a dense encoder, four two-stage Conformer blocks (time, then frequency), and two decoders: a magnitude mask and a complex refinement. Trained with a MetricGAN discriminator that predicts PESQ.
-- **Results:** PESQ 3.41, CSIG 4.63, CBAK 3.94, COVL 4.12, SSNR 11.10, STOI 0.96, 1.83 M params.
-- **+** Strong results with a small model; the TF-Conformer models both time and frequency context; the paper is thorough (denoising, dereverberation, super-resolution).
-- **−** The complex branch only refines the noisy phase, so phase is still estimated indirectly. Attention is quadratic in utterance length, the model is non-causal, and computing PESQ for the GAN slows training.
+*S. Abdulatif, R. Cao, B. Yang. IEEE/ACM TASLP, vol. 32, 2024 (Q1). Phiên bản ngắn tại Interspeech 2022.*
+- **Phương pháp:** một dense encoder, bốn khối Conformer hai giai đoạn (thời gian, rồi tần số), và hai decoder: mask biên độ và tinh chỉnh phức. Huấn luyện với discriminator MetricGAN dự đoán PESQ.
+- **Kết quả:** PESQ 3.41, CSIG 4.63, CBAK 3.94, COVL 4.12, SSNR 11.10, STOI 0.96, 1.83 M tham số.
+- **+** Kết quả mạnh với mô hình nhỏ; TF-Conformer mô hình hóa ngữ cảnh theo cả thời gian và tần số; bài báo đánh giá kỹ (khử nhiễu, khử vang, siêu phân giải).
+- **−** Nhánh phức chỉ tinh chỉnh pha nhiễu nên pha vẫn được ước lượng gián tiếp. Attention có chi phí bậc hai theo độ dài câu, mô hình không causal, và tính PESQ cho GAN làm chậm huấn luyện.
 
-### P2. MP-SENet: Parallel Denoising of Magnitude and Phase Spectra *(the solution we analyse in depth)*
-*Y.-X. Lu, Y. Ai, Z.-H. Ling. Interspeech 2023 (CORE A). Extended version: "Explicit estimation of magnitude and phase spectra in parallel for high-quality speech enhancement", Neural Networks, 2025.*
-- **Method:** the same encoder and TF-Conformer backbone, with **two parallel decoders**: a magnitude-mask decoder (learnable sigmoid, β = 2) and a **phase decoder** that predicts pseudo real/imag parts and takes `atan2`, so phase is estimated *explicitly*. Losses: magnitude MSE, **anti-wrapping phase losses** (instantaneous phase, group delay, instantaneous angular frequency), complex MSE, time L1, STFT consistency and a metric-discriminator loss.
-- **Results:** PESQ 3.50, CSIG 4.73, CBAK 3.95, COVL 4.22, STOI 0.96, about 2.05 M params.
-- **+** State of the art among ~2 M-parameter models; it is the first to estimate phase directly with wrapping-aware losses; official code and checkpoints are available.
-- **−** Six loss terms with hand-tuned weights; non-causal and has quadratic attention; it only learns from VB-D noise types; PESQ-driven training can over-fit the metric.
+### P2. MP-SENet: Parallel Denoising of Magnitude and Phase Spectra *(giải pháp được phân tích chuyên sâu)*
+*Y.-X. Lu, Y. Ai, Z.-H. Ling. Interspeech 2023 (CORE A). Bản mở rộng: "Explicit estimation of magnitude and phase spectra in parallel for high-quality speech enhancement", Neural Networks, 2025.*
+- **Phương pháp:** cùng encoder và backbone TF-Conformer, với **hai decoder song song**: decoder mask biên độ (sigmoid học được, β = 2) và **decoder pha** dự đoán phần thực/ảo giả rồi lấy `atan2`, nên pha được ước lượng *tường minh*. Loss: magnitude MSE, **loss pha anti-wrapping** (pha tức thời, group delay, tần số góc tức thời), complex MSE, time L1, STFT consistency và loss metric discriminator.
+- **Kết quả:** PESQ 3.50, CSIG 4.73, CBAK 3.95, COVL 4.22, STOI 0.96, khoảng 2.05 M tham số.
+- **+** State of the art trong các mô hình ~2 M tham số; là mô hình đầu tiên ước lượng pha trực tiếp với loss hiểu hiện tượng quấn pha; có mã nguồn và checkpoint chính thức.
+- **−** Sáu thành phần loss với trọng số chọn tay; không causal và có attention bậc hai; chỉ học từ các loại nhiễu của VB-D; huấn luyện theo PESQ có thể overfit metric.
 
 ### P3. SGMSE+: Speech Enhancement and Dereverberation with Diffusion-based Generative Models
 *J. Richter, S. Welker, J.-M. Lemercier, B. Lay, T. Gerkmann. IEEE/ACM TASLP, vol. 31, 2023 (Q1).*
-- **Method:** a score-based diffusion model in the complex STFT domain. A stochastic differential equation drifts from clean speech towards the noisy mixture, and a predictor–corrector sampler runs it in reverse, conditioned on the noisy input. The backbone is NCSN++.
-- **Results:** PESQ 2.93, ESTOI 0.87, SI-SDR 17.3 dB on VB-D; it works better on mismatched test sets (trained on WSJ0-CHiME3, tested on VB-D).
-- **+** Generalises well and sounds natural; the same model also dereverberates.
-- **−** About 60 network evaluations per utterance with a roughly 65 M-parameter network, so it is slow; it can produce breathing or phoneme artefacts at low SNR; its PESQ is below the best discriminative models.
+- **Phương pháp:** mô hình diffusion dựa trên score trong miền STFT phức. Một phương trình vi phân ngẫu nhiên (SDE) trôi từ tiếng nói sạch về phía hỗn hợp nhiễu, và bộ lấy mẫu predictor–corrector chạy ngược nó, có điều kiện theo đầu vào nhiễu. Backbone là NCSN++.
+- **Kết quả:** PESQ 2.93, ESTOI 0.87, SI-SDR 17.3 dB trên VB-D; hoạt động tốt hơn trên tập test lệch miền (huấn luyện trên WSJ0-CHiME3, test trên VB-D).
+- **+** Tổng quát hóa tốt và nghe tự nhiên; cùng mô hình còn khử được vang.
+- **−** Khoảng 60 lần chạy mạng mỗi câu với mạng khoảng 65 M tham số nên chậm; có thể sinh tiếng thở hoặc âm vị giả ở SNR thấp; PESQ thấp hơn các mô hình discriminative tốt nhất.
 
 ### P4. StoRM: A Diffusion-based Stochastic Regeneration Model
 *J.-M. Lemercier, J. Richter, S. Welker, T. Gerkmann. IEEE/ACM TASLP, vol. 31, 2023 (Q1).*
-- **Method:** a predictive (discriminative) model first gives an estimate, then a diffusion model *regenerates* the details from it. This combines the strengths of the two families.
-- **+** Removes the vocalising/breathing artefacts of pure diffusion and needs far fewer sampling steps than SGMSE+.
-- **−** Two networks to train and run; still slower than a single predictive model.
+- **Phương pháp:** một mô hình dự đoán (discriminative) cho ước lượng ban đầu, sau đó một mô hình diffusion *tái sinh* các chi tiết từ ước lượng đó. Cách này kết hợp ưu điểm của hai nhóm.
+- **+** Loại bỏ lỗi phát âm/tiếng thở giả của diffusion thuần và cần ít bước lấy mẫu hơn nhiều so với SGMSE+.
+- **−** Phải huấn luyện và chạy hai mạng; vẫn chậm hơn một mô hình dự đoán đơn lẻ.
 
 ### P5. DOSE: Diffusion Dropout with Adaptive Prior for Speech Enhancement
 *W. Tai, Y. Lei, F. Zhou, G. Trajcevski, T. Zhong. NeurIPS 2023 (CORE A\*).*
-- **Method:** fixes the weak condition in conditional diffusion SE. *Diffusion dropout* during training makes the model rely on the noisy condition, and an *adaptive prior* starts sampling from a noisy estimate instead of pure noise. It needs only two sampling steps.
-- **+** Efficient diffusion SE with good generalisation and theoretical analysis.
-- **−** Its PESQ on VB-D is still well below discriminative SOTA; the method is complex to tune.
+- **Phương pháp:** khắc phục điều kiện yếu trong diffusion SE có điều kiện. *Diffusion dropout* khi huấn luyện buộc mô hình dựa vào điều kiện nhiễu, và *prior thích nghi* bắt đầu lấy mẫu từ một ước lượng nhiễu thay vì nhiễu thuần. Chỉ cần hai bước lấy mẫu.
+- **+** Diffusion SE hiệu quả, tổng quát hóa tốt và có phân tích lý thuyết.
+- **−** PESQ trên VB-D vẫn thấp hơn nhiều so với SOTA discriminative; phương pháp khó tinh chỉnh.
 
 ### P6. GenSE: Generative Speech Enhancement via Language Models using Hierarchical Modeling
 *J. Yao, H. Liu, C. Chen, Y. Hu, E. S. Chng, L. Xie. ICLR 2025 (CORE A\*).*
-- **Method:** SE as conditional language modelling. Semantic tokens from a self-supervised model and acoustic tokens from a single-quantiser codec are predicted in two hierarchical stages (noisy→clean semantic, then semantic→acoustic), with token-chain prompting to keep the speaker's timbre.
-- **+** Strong DNSMOS and speaker similarity on real recordings; robust to many distortions.
-- **−** Large model and slow autoregressive decoding; reported mostly on DNS-style non-intrusive metrics; risk of content or speaker drift.
+- **Phương pháp:** SE như language modelling có điều kiện. Token ngữ nghĩa từ một mô hình self-supervised và token âm học từ một codec một bộ lượng tử được dự đoán qua hai giai đoạn phân cấp (ngữ nghĩa nhiễu→sạch, rồi ngữ nghĩa→âm học), với token-chain prompting để giữ âm sắc người nói.
+- **+** DNSMOS và độ giống người nói cao trên bản ghi thực; bền vững với nhiều loại méo.
+- **−** Mô hình lớn và giải mã autoregressive chậm; chủ yếu báo cáo bằng metric non-intrusive kiểu DNS; nguy cơ lệch nội dung hoặc giọng.
 
-### Additional related work
-- **MetricGAN+** (Fu et al., Interspeech 2021): a BLSTM mask with a learned PESQ discriminator, PESQ 3.15. It is the origin of the metric discriminator used in P1/P2.
-- **DeepFilterNet** (Schröter et al., ICASSP 2022; v2/v3 follow-ups): ERB-band gains plus *deep filtering* for real-time full-band (48 kHz) SE with very low complexity; around 3.1 PESQ on VB-D for v2/v3.
-- **SEMamba** (Chao et al., IEEE SLT 2024): replaces the Conformers of MP-SENet with Mamba (state-space) blocks, giving linear-time sequence modelling; PESQ 3.55, or 3.69 with perceptual contrast stretching (PCS). This motivates our proposed **PCS** improvement.
+### Các công trình liên quan khác
+- **MetricGAN+** (Fu et al., Interspeech 2021): mask BLSTM với discriminator học PESQ, PESQ 3.15. Đây là nguồn gốc của metric discriminator dùng trong P1/P2.
+- **DeepFilterNet** (Schröter et al., ICASSP 2022; các bản v2/v3): hệ số theo dải ERB cộng *deep filtering* cho SE full-band (48 kHz) thời gian thực với độ phức tạp rất thấp; khoảng 3.1 PESQ trên VB-D với v2/v3.
+- **SEMamba** (Chao et al., IEEE SLT 2024): thay Conformer của MP-SENet bằng khối Mamba (state-space), cho mô hình chuỗi thời gian tuyến tính; PESQ 3.55, hoặc 3.69 với perceptual contrast stretching (PCS). Đây là động lực cho cải tiến **PCS** mà chúng tôi đề xuất.
 
-## 3. Summary table (VB-D, as reported)
+## 3. Bảng tổng hợp (VB-D, theo công bố)
 
-| Model | Venue | Type | PESQ | CSIG | CBAK | COVL | STOI | Params |
+| Mô hình | Nơi công bố | Loại | PESQ | CSIG | CBAK | COVL | STOI | Tham số |
 |---|---|---|---|---|---|---|---|---|
-| Noisy | – | – | 1.97 | 3.35 | 2.44 | 2.63 | 0.91 | – |
+| Đầu vào nhiễu | – | – | 1.97 | 3.35 | 2.44 | 2.63 | 0.91 | – |
 | MetricGAN+ | Interspeech'21 | Disc. mask | 3.15 | 4.14 | 3.16 | 3.64 | – | – |
 | SGMSE+ | TASLP'23 | Diffusion | 2.93 | – | – | – | ESTOI 0.87 | ~65 M |
-| CMGAN | TASLP'24 | Disc. mag+complex | 3.41 | 4.63 | 3.94 | 4.12 | 0.96 | 1.83 M |
-| MP-SENet | Interspeech'23 | Disc. mag+phase | 3.50 | 4.73 | 3.95 | 4.22 | 0.96 | 2.05 M |
+| CMGAN | TASLP'24 | Disc. biên độ+phức | 3.41 | 4.63 | 3.94 | 4.12 | 0.96 | 1.83 M |
+| MP-SENet | Interspeech'23 | Disc. biên độ+pha | 3.50 | 4.73 | 3.95 | 4.22 | 0.96 | 2.05 M |
 | SEMamba (+PCS) | SLT'24 | Disc. (Mamba) | 3.55 (3.69) | – | – | – | – | ~2 M |
